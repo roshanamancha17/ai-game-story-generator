@@ -9,7 +9,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
+
+const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
 
 const formSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
@@ -36,6 +38,8 @@ const samplePrompts = [
 
 export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorFormProps) {
   const { toast } = useToast();
+  const lastRequestTime = useRef<number>(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const [isImproving, setIsImproving] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -45,8 +49,22 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
     }
   });
 
+  const checkCooldown = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime.current;
+    const remaining = Math.max(0, COOLDOWN_PERIOD - timeSinceLastRequest);
+
+    setCooldownRemaining(remaining);
+
+    if (remaining > 0) {
+      throw new Error(`Please wait ${Math.ceil(remaining / 1000)} seconds before generating another idea.`);
+    }
+  }, []);
+
   const generateMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      checkCooldown();
+      lastRequestTime.current = Date.now();
       const res = await apiRequest("POST", "/api/generate-idea", values);
       return res.json();
     },
@@ -69,6 +87,8 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
 
   const improvePromptMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      checkCooldown();
+      lastRequestTime.current = Date.now();
       const res = await apiRequest("POST", "/api/improve-prompt", values);
       return res.json();
     },
@@ -103,6 +123,16 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
     setIsImproving(true);
     improvePromptMutation.mutate({ description });
   }, [form, improvePromptMutation, toast]);
+
+  // Update cooldown timer
+  useEffect(() => {
+    if (cooldownRemaining > 0) {
+      const interval = setInterval(() => {
+        setCooldownRemaining(prev => Math.max(0, prev - 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [cooldownRemaining]);
 
   return (
     <Form {...form}>
@@ -157,7 +187,7 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
             type="button"
             variant="outline"
             onClick={handleImprovePrompt}
-            disabled={generateMutation.isPending || isImproving}
+            disabled={generateMutation.isPending || isImproving || cooldownRemaining > 0}
             className="flex-1"
           >
             {isImproving ? (
@@ -165,6 +195,8 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Improving...
               </>
+            ) : cooldownRemaining > 0 ? (
+              `Wait ${Math.ceil(cooldownRemaining / 1000)}s`
             ) : (
               <>
                 <Wand2 className="mr-2 h-4 w-4" />
@@ -175,13 +207,15 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
           <Button 
             type="submit" 
             className="flex-1" 
-            disabled={generateMutation.isPending || isImproving}
+            disabled={generateMutation.isPending || isImproving || cooldownRemaining > 0}
           >
             {generateMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Generating Idea...
               </>
+            ) : cooldownRemaining > 0 ? (
+              `Wait ${Math.ceil(cooldownRemaining / 1000)}s`
             ) : (
               'Generate Game Concept'
             )}

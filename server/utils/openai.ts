@@ -91,6 +91,10 @@ async function retryWithBackoff<T>(
           }, CIRCUIT_RESET_TIMEOUT);
         }
 
+        if (error.status === 429) {
+          throw new Error('Too many requests. Please try again in a moment.');
+        }
+
         throw error;
       }
 
@@ -126,7 +130,6 @@ function addRequest(userId: string) {
 
 // Fallback story generator for when OpenAI is unavailable
 function generateFallbackStory(input: StoryInput): StoryOutput {
-  // Genre-specific story elements
   const genreElements = {
     Fantasy: {
       setting: "mystical realm",
@@ -163,7 +166,6 @@ function generateFallbackStory(input: StoryInput): StoryOutput {
   const elements = genreElements[input.genre];
   const introLength = input.storyLength === "Short" ? "brief" : input.storyLength === "Long" ? "epic" : "compelling";
 
-  // Generate a structured story based on genre and input
   const story: StoryOutput = {
     title: input.gameTitle,
     introduction: `In the ${elements.setting} of ${input.gameTitle}, a ${introLength} tale unfolds. ${input.mainCharacter} emerges as an unlikely hero, destined to face the challenges that threaten this world. As darkness looms and the ${elements.antagonist} grows in power, our hero must rise to meet their destiny.`,
@@ -195,16 +197,39 @@ function generateFallbackStory(input: StoryInput): StoryOutput {
   return story;
 }
 
+function generateFallbackIdea(input: IdeaGenerationInput): IdeaGenerationOutput {
+  const keywords = input.description.toLowerCase();
+  let genre: StoryGenre = "Fantasy";
+
+  if (keywords.includes("space") || keywords.includes("future") || keywords.includes("technology")) {
+    genre = "Sci-Fi";
+  } else if (keywords.includes("horror") || keywords.includes("scary") || keywords.includes("dark")) {
+    genre = "Horror";
+  } else if (keywords.includes("detective") || keywords.includes("solve") || keywords.includes("mystery")) {
+    genre = "Mystery";
+  } else if (keywords.includes("role") || keywords.includes("adventure") || keywords.includes("quest")) {
+    genre = "RPG";
+  }
+
+  return {
+    genre,
+    gameTitle: input.description.split(' ').slice(0, 3).join(' '),
+    mainCharacter: "A mysterious protagonist",
+    storyLength: "Medium",
+    conceptDescription: input.description
+  };
+}
+
 async function generateImprovedPrompt(input: IdeaGenerationInput, userId: string): Promise<PromptImprovementOutput> {
   try {
     if (isRateLimited(userId)) {
-      throw new Error('You have reached the maximum number of generations per minute. Please wait a moment and try again.');
+      throw new Error('Please wait a moment before making another request.');
     }
 
     if (isCircuitOpen()) {
       return {
         improvedPrompt: input.description,
-        reasoning: "Prompt improvement is temporarily unavailable. Using original prompt."
+        reasoning: "Our AI assistant is taking a short break. Please try again in a minute."
       };
     }
 
@@ -242,45 +267,29 @@ async function generateImprovedPrompt(input: IdeaGenerationInput, userId: string
     return JSON.parse(content) as PromptImprovementOutput;
   } catch (error: any) {
     console.error('Error improving prompt:', error);
+
+    if (error.status === 429) {
+      throw new Error('Please wait a moment before making another request.');
+    }
+
+    if (error.status === 401) {
+      throw new Error('OpenAI service is currently unavailable. Please try again later.');
+    }
+
     return {
       improvedPrompt: input.description,
-      reasoning: "Failed to improve prompt. Using original description."
+      reasoning: "We couldn't improve your prompt right now. Please try again in a moment."
     };
   }
-}
-
-function generateFallbackIdea(input: IdeaGenerationInput): IdeaGenerationOutput {
-  // Extract keywords from input to determine genre
-  const keywords = input.description.toLowerCase();
-  let genre: StoryGenre = "Fantasy"; // Default genre
-
-  if (keywords.includes("space") || keywords.includes("future") || keywords.includes("technology")) {
-    genre = "Sci-Fi";
-  } else if (keywords.includes("horror") || keywords.includes("scary") || keywords.includes("dark")) {
-    genre = "Horror";
-  } else if (keywords.includes("detective") || keywords.includes("solve") || keywords.includes("mystery")) {
-    genre = "Mystery";
-  } else if (keywords.includes("role") || keywords.includes("adventure") || keywords.includes("quest")) {
-    genre = "RPG";
-  }
-
-  return {
-    genre,
-    gameTitle: `The ${input.description.split(' ').slice(0, 3).join(' ')}`,
-    mainCharacter: "A mysterious protagonist ready for adventure",
-    storyLength: "Medium",
-    conceptDescription: `A game based on your concept: ${input.description}. (Full idea generation is temporarily unavailable. Please try again later.)`
-  };
 }
 
 async function generateGameIdea(input: IdeaGenerationInput, userId: string): Promise<IdeaGenerationOutput> {
   try {
     if (isRateLimited(userId)) {
-      throw new Error('You have reached the maximum number of generations per minute. Please wait a moment and try again.');
+      throw new Error('Please wait a moment before generating another idea.');
     }
 
     if (isCircuitOpen()) {
-      console.log('Circuit breaker is open, using fallback response for idea generation');
       return generateFallbackIdea(input);
     }
 
@@ -297,7 +306,7 @@ async function generateGameIdea(input: IdeaGenerationInput, userId: string): Pro
           {
             role: "user",
             content: `Transform this description into a game concept:
-            ${input.description}
+            "${input.description}"
 
             Format the response as a JSON object with the following structure:
             {
@@ -322,34 +331,30 @@ async function generateGameIdea(input: IdeaGenerationInput, userId: string): Pro
   } catch (error: any) {
     console.error('Error generating game idea:', error);
 
-    if (error.status === 429 || error.status === 500) {
-      console.log('Service error, using fallback response for idea generation');
-      return generateFallbackIdea(input);
+    if (error.status === 429) {
+      throw new Error('Please wait a moment before generating another idea.');
     }
 
     if (error.status === 401) {
-      throw new Error('Invalid API key. Please check your OpenAI API key configuration.');
+      throw new Error('OpenAI service is currently unavailable. Please try again later.');
     }
 
-    // Pass through custom rate limit message
-    if (error.message.includes('reached the maximum number')) {
-      throw error;
-    }
-
-    // For any other errors, use the fallback
-    console.log('Unexpected error, using fallback response for idea generation');
-    return generateFallbackIdea(input);
+    console.log('Using fallback response for idea generation');
+    const fallbackIdea = generateFallbackIdea(input);
+    return {
+      ...fallbackIdea,
+      conceptDescription: fallbackIdea.conceptDescription + " (AI services will be available again shortly.)"
+    };
   }
 }
 
 async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
   try {
     if (isRateLimited(userId)) {
-      throw new Error('You have reached the maximum number of story generations per minute. Please wait a moment and try again.');
+      throw new Error('Please wait a moment before generating another story.');
     }
 
     if (isCircuitOpen()) {
-      console.log('Circuit breaker is open, using fallback response');
       return generateFallbackStory(input);
     }
 
@@ -397,22 +402,14 @@ async function generateGameStory(input: StoryInput, userId: string): Promise<Sto
   } catch (error: any) {
     console.error('Error generating story:', error);
 
-    if (error.status === 429 || error.status === 500) {
-      console.log('Service error, using fallback response');
-      return generateFallbackStory(input);
+    if (error.status === 429) {
+      throw new Error('Please wait a moment before generating another story.');
     }
 
     if (error.status === 401) {
-      throw new Error('Invalid API key. Please check your OpenAI API key configuration.');
+      throw new Error('OpenAI service is currently unavailable. Please try again later.');
     }
 
-    // Pass through custom rate limit message
-    if (error.message.includes('reached the maximum number')) {
-      throw error;
-    }
-
-    // For any other errors, use the fallback
-    console.log('Unexpected error, using fallback response');
     return generateFallbackStory(input);
   }
 }
