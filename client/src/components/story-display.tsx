@@ -2,6 +2,7 @@ import { Story } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { BookOpen, Users, Crosshair, Map } from "lucide-react";
 
 interface StoryDisplayProps {
   story: Story;
@@ -21,45 +22,69 @@ export default function StoryDisplay({ story }: StoryDisplayProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden transition-all hover:shadow-lg">
+      <CardHeader className="bg-muted/50">
         <CardTitle className="flex justify-between items-center">
-          <span>{content.title}</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-lg font-semibold">{content.title}</span>
+          <span className="text-xs text-muted-foreground">
             {format(new Date(story.createdAt), "MMM d, yyyy")}
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold mb-2">Introduction</h3>
-              <p className="text-sm text-muted-foreground">{content.introduction}</p>
+      <CardContent className="p-0">
+        <ScrollArea className="h-[400px]">
+          <div className="p-6 space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-primary">
+                <BookOpen className="h-4 w-4" />
+                <h3 className="font-semibold">Introduction</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {content.introduction}
+              </p>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Main Quest</h3>
-              <p className="text-sm text-muted-foreground">{content.mainQuest}</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-primary">
+                <Crosshair className="h-4 w-4" />
+                <h3 className="font-semibold">Main Quest</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {content.mainQuest}
+              </p>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Side Quests</h3>
-              <ul className="list-disc pl-4 text-sm text-muted-foreground">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-primary">
+                <Map className="h-4 w-4" />
+                <h3 className="font-semibold">Side Quests</h3>
+              </div>
+              <ul className="list-disc pl-5 space-y-2">
                 {content.sideQuests.map((quest, index) => (
-                  <li key={index}>{quest}</li>
+                  <li key={index} className="text-sm text-muted-foreground">
+                    {quest}
+                  </li>
                 ))}
               </ul>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Characters</h3>
-              <div className="space-y-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-primary">
+                <Users className="h-4 w-4" />
+                <h3 className="font-semibold">Characters</h3>
+              </div>
+              <div className="grid gap-4">
                 {content.characters.map((character, index) => (
-                  <div key={index} className="text-sm">
-                    <span className="font-medium">{character.name}</span>
-                    <span className="text-muted-foreground"> - {character.role}</span>
-                    <p className="text-muted-foreground">{character.description}</p>
+                  <div key={index} className="space-y-1 p-3 rounded-lg bg-muted/50">
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-sm">{character.name}</span>
+                      <span className="text-xs text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full">
+                        {character.role}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {character.description}
+                    </p>
                   </div>
                 ))}
               </div>
