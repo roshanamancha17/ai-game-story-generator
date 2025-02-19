@@ -111,12 +111,14 @@ const FREE_TIER_LIMITS = {
   GENERATIONS_PER_DAY: 10,
   IMPROVE_PROMPT: true,
   GAMEPLAY_DETAILS: false,
+  WORLD_BUILDING: false,
 };
 
 const PREMIUM_TIER_LIMITS = {
   GENERATIONS_PER_DAY: 100,
   IMPROVE_PROMPT: true,
   GAMEPLAY_DETAILS: true,
+  WORLD_BUILDING: true,
 };
 
 
@@ -672,4 +674,334 @@ function generateFallbackGameplayDetails(input: IdeaGenerationOutput): GameplayD
   return baseDetails;
 }
 
-export { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails };
+interface WorldBuildingDetails {
+  worldName: string;
+  cosmology: {
+    origin: string;
+    magicSystem?: string;
+    technology?: string;
+    naturalLaws: string[];
+  };
+  environment: {
+    geography: string;
+    climate: string;
+    landmarks: string[];
+    settlements: Array<{
+      name: string;
+      description: string;
+      significance: string;
+    }>;
+  };
+  society: {
+    factions: Array<{
+      name: string;
+      description: string;
+      relationships: string;
+      influence: string;
+    }>;
+    cultures: Array<{
+      name: string;
+      traditions: string[];
+      beliefs: string;
+      customsAndRituals: string[];
+    }>;
+    politics: {
+      powerStructure: string;
+      majorConflicts: string[];
+      alliances: string[];
+    };
+  };
+  history: {
+    timeline: Array<{
+      era: string;
+      description: string;
+      significantEvents: string[];
+    }>;
+    legends: string[];
+    artifacts: Array<{
+      name: string;
+      description: string;
+      significance: string;
+    }>;
+  };
+}
+
+// Add after generateGameplayDetails function
+async function generateWorldBuilding(
+  input: {
+    genre: StoryGenre;
+    gameTitle: string;
+    conceptDescription: string;
+  },
+  userId: string,
+  isPremium: boolean = false
+): Promise<WorldBuildingDetails> {
+  if (!isPremium && !PREMIUM_TIER_LIMITS.WORLD_BUILDING) {
+    return generateFallbackWorldBuilding(input);
+  }
+
+  try {
+    if (isRateLimited(userId, isPremium)) {
+      throw new Error(isPremium
+        ? 'You have reached your premium tier daily limit. Please try again tomorrow.'
+        : 'You have reached your free tier daily limit. Upgrade to premium for more generations!');
+    }
+
+    addRequest(userId);
+
+    const response = await retryWithBackoff(async () => {
+      return await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a master worldbuilder who specializes in creating rich, detailed game worlds with deep lore, cultures, and histories."
+          },
+          {
+            role: "user",
+            content: `Create a detailed world for this game concept:
+            Title: ${input.gameTitle}
+            Genre: ${input.genre}
+            Concept: ${input.conceptDescription}
+
+            Generate a rich world with its own history, cultures, and systems. Include details about:
+            - The world's cosmology and natural laws
+            - Environment and geography
+            - Societies, factions, and cultures
+            - History, legends, and artifacts
+
+            Format the response as a JSON object matching the WorldBuildingDetails type structure.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    return JSON.parse(content) as WorldBuildingDetails;
+  } catch (error: any) {
+    console.error('Error generating world details:', error);
+
+    if (error.message.includes('Invalid API key') || error.status === 401) {
+      throw new Error('The AI service is temporarily unavailable. Please try again in a few minutes.');
+    }
+
+    if (error.status === 429 || error.message.includes('rate limit')) {
+      throw new Error('Please wait a moment before generating world details.');
+    }
+
+    return generateFallbackWorldBuilding(input);
+  }
+}
+
+function generateFallbackWorldBuilding(input: { genre: StoryGenre; gameTitle: string; conceptDescription: string }): WorldBuildingDetails {
+  const genreDefaults: Record<StoryGenre, WorldBuildingDetails> = {
+    Fantasy: {
+      worldName: input.gameTitle + " Realm",
+      cosmology: {
+        origin: "A world forged by ancient gods through elemental magic",
+        magicSystem: "Elemental magic drawn from natural forces",
+        naturalLaws: ["Magic flows through ley lines", "Elements can be manipulated by the gifted", "Magical creatures roam freely"]
+      },
+      environment: {
+        geography: "Diverse landscapes from mystical forests to floating islands",
+        climate: "Magically influenced weather patterns",
+        landmarks: ["The Ancient Spire", "The Enchanted Forest", "The Crystal Mountains"],
+        settlements: [
+          {
+            name: "The Crystal City",
+            description: "A magnificent city built with magical crystals",
+            significance: "Center of magical learning and commerce"
+          }
+        ]
+      },
+      society: {
+        factions: [
+          {
+            name: "The Mage Council",
+            description: "Governing body of magic users",
+            relationships: "Maintains order among magic users",
+            influence: "Controls magical education and research"
+          }
+        ],
+        cultures: [
+          {
+            name: "Crystal Shapers",
+            traditions: ["Crystal crafting", "Magical attunement", "Nature worship"],
+            beliefs: "Magic is a gift to be nurtured and respected",
+            customsAndRituals: ["Crystal blessing ceremony", "Magical coming of age ritual"]
+          }
+        ],
+        politics: {
+          powerStructure: "Magical meritocracy",
+          majorConflicts: ["Struggle between traditional and progressive mages"],
+          alliances: ["Pact of the Ancient Orders"]
+        }
+      },
+      history: {
+        timeline: [
+          {
+            era: "Age of Awakening",
+            description: "When magic first emerged in the world",
+            significantEvents: ["First magical awakening", "Founding of the Mage Council"]
+          }
+        ],
+        legends: ["The First Mage", "The Crystal Heart Legend"],
+        artifacts: [
+          {
+            name: "The Crystal Heart",
+            description: "Ancient magical artifact of immense power",
+            significance: "Said to be the source of all magic"
+          }
+        ]
+      }
+    },
+    "Sci-Fi": {
+      worldName: input.gameTitle + " System",
+      cosmology: {
+        origin: "Advanced civilization emerged from interstellar exploration",
+        technology: "Quantum computing and FTL travel",
+        naturalLaws: ["Quantum physics manipulation", "Faster-than-light travel", "Neural network consciousness"]
+      },
+      environment: {
+        geography: "Multiple colonized planets and space stations",
+        climate: "Controlled environments and terraformed worlds",
+        landmarks: ["The Quantum Core", "The Star Bridge", "The Neural Hub"],
+        settlements: [
+          {
+            name: "New Terra Prime",
+            description: "First successfully terraformed colony",
+            significance: "Humanity's first extrasolar settlement"
+          }
+        ]
+      },
+      society: {
+        factions: [
+          {
+            name: "The Quantum Collective",
+            description: "Advanced AI-human hybrid society",
+            relationships: "Maintains technological advancement",
+            influence: "Controls most advanced technology"
+          }
+        ],
+        cultures: [
+          {
+            name: "Quantum Pioneers",
+            traditions: ["AI integration", "Digital consciousness transfer", "Space exploration"],
+            beliefs: "Technology is the path to human evolution",
+            customsAndRituals: ["Neural linking ceremony", "Digital ascension"]
+          }
+        ],
+        politics: {
+          powerStructure: "Technocratic democracy",
+          majorConflicts: ["AI rights disputes", "Resource allocation conflicts"],
+          alliances: ["Interstellar Commonwealth"]
+        }
+      },
+      history: {
+        timeline: [
+          {
+            era: "Digital Renaissance",
+            description: "When AI and human consciousness merged",
+            significantEvents: ["First AI awakening", "The Great Migration"]
+          }
+        ],
+        legends: ["The First Upload", "The Quantum Prophecy"],
+        artifacts: [
+          {
+            name: "The Original Core",
+            description: "First quantum computer capable of consciousness transfer",
+            significance: "Enabled the merger of human and AI consciousness"
+          }
+        ]
+      }
+    },
+    Horror: {
+      worldName: "Placeholder",
+      cosmology: { origin: "", naturalLaws: [] },
+      environment: { geography: "", climate: "", landmarks: [], settlements: [] },
+      society: { factions: [], cultures: [], politics: { powerStructure: "", majorConflicts: [], alliances: [] } },
+      history: { timeline: [], legends: [], artifacts: [] }
+    },
+    Mystery: {
+      worldName: "Placeholder",
+      cosmology: { origin: "", naturalLaws: [] },
+      environment: { geography: "", climate: "", landmarks: [], settlements: [] },
+      society: { factions: [], cultures: [], politics: { powerStructure: "", majorConflicts: [], alliances: [] } },
+      history: { timeline: [], legends: [], artifacts: [] }
+    },
+    RPG: {
+      worldName: "Placeholder",
+      cosmology: {
+        origin: "A world of epic quests and legendary heroes",
+        naturalLaws: ["The power of destiny", "Heroic deeds shape reality", "Ancient magic persists"]
+      },
+      environment: {
+        geography: "Vast kingdoms and untamed wilderness",
+        climate: "Diverse regions with unique challenges",
+        landmarks: ["The Grand Arena", "The Heroes' Monument", "The Ancient Guild Hall"],
+        settlements: [
+          {
+            name: "The Capital",
+            description: "A bustling hub of adventurers and merchants",
+            significance: "Center of trade and heroic quests"
+          }
+        ]
+      },
+      society: {
+        factions: [
+          {
+            name: "The Adventurers' Guild",
+            description: "Organization of professional heroes",
+            relationships: "Mediates between kingdoms and heroes",
+            influence: "Controls quest distribution and rewards"
+          }
+        ],
+        cultures: [
+          {
+            name: "The Path Seekers",
+            traditions: ["Hero's Journey", "Combat Training", "Quest Rituals"],
+            beliefs: "Every person has a legendary destiny to fulfill",
+            customsAndRituals: ["Coming of Age Trials", "Victory Celebrations"]
+          }
+        ],
+        politics: {
+          powerStructure: "Merit-based adventuring hierarchy",
+          majorConflicts: ["Guild rivalries", "Kingdom disputes"],
+          alliances: ["The Heroes' Pact"]
+        }
+      },
+      history: {
+        timeline: [
+          {
+            era: "Age of Heroes",
+            description: "When the first legendary heroes emerged",
+            significantEvents: ["The First Quest", "Formation of the Guild"]
+          }
+        ],
+        legends: ["The First Hero", "The Eternal Quest"],
+        artifacts: [
+          {
+            name: "The Hero's Badge",
+            description: "Ancient symbol of heroic achievement",
+            significance: "Marks the bearer as a true hero"
+          }
+        ]
+      }
+    }
+  };
+
+  return genreDefaults[input.genre];
+}
+
+export {
+  generateGameStory,
+  generateGameIdea,
+  generateImprovedPrompt,
+  generateGameplayDetails,
+  generateWorldBuilding
+};

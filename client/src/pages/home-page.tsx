@@ -4,7 +4,7 @@ import StoryGeneratorForm from "@/components/story-generator-form";
 import IdeaGeneratorForm from "@/components/idea-generator-form";
 import StoryDisplay from "@/components/story-display";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Story, GameplayDetails } from "@shared/schema";
+import { Story, GameplayDetails, WorldBuildingDetails } from "@shared/schema";
 import { LogOut, GamepadIcon, Sparkles, BookText, Star } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
@@ -12,7 +12,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import GameplayDetailsDisplay from "@/components/gameplay-details";
-import PremiumFeaturesCard from "@/components/premium-features-card"; // Assuming this component exists
+import PremiumFeaturesCard from "@/components/premium-features-card";
+import WorldBuildingDisplay from "@/components/world-building-display";
 
 
 export default function HomePage() {
@@ -20,6 +21,7 @@ export default function HomePage() {
   const { toast } = useToast();
   const [generatedIdea, setGeneratedIdea] = useState<any>(null);
   const [gameplayDetails, setGameplayDetails] = useState<GameplayDetails | null>(null);
+  const [worldDetails, setWorldDetails] = useState<WorldBuildingDetails | null>(null);
 
   const { data: stories } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
@@ -40,10 +42,35 @@ export default function HomePage() {
         title: "Gameplay details generated!",
         description: "Check out the detailed mechanics for your game concept."
       });
+      // Also generate world building details
+      if (generatedIdea) {
+        generateWorldBuildingMutation.mutate(generatedIdea);
+      }
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to generate gameplay details",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const generateWorldBuildingMutation = useMutation({
+    mutationFn: async (concept: any) => {
+      const res = await apiRequest("POST", "/api/world-building", concept);
+      return res.json();
+    },
+    onSuccess: (details: WorldBuildingDetails) => {
+      setWorldDetails(details);
+      toast({
+        title: "World details generated!",
+        description: "Explore the rich lore and details of your game world."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to generate world details",
         description: error.message,
         variant: "destructive"
       });
@@ -217,6 +244,32 @@ export default function HomePage() {
             <GameplayDetailsDisplay
               details={gameplayDetails}
               title={generatedIdea?.gameTitle || "Game Concept"}
+            />
+          </div>
+        )}
+        {worldDetails && (
+          <div className="mt-8 space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">World Building</h2>
+              <p className="text-muted-foreground">
+                {isPremium
+                  ? "Explore the rich lore and detailed world of your game concept."
+                  : "Basic world information. Upgrade to Premium for full world-building features!"}
+              </p>
+            </div>
+            {!isPremium && (
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2 text-primary">
+                  <Star className="h-5 w-5" />
+                  <p className="text-sm font-medium">
+                    Upgrade to Premium for advanced world-building features including detailed lore, cultures, and histories!
+                  </p>
+                </div>
+              </div>
+            )}
+            <WorldBuildingDisplay
+              details={worldDetails}
+              title={generatedIdea?.gameTitle || "Game World"}
             />
           </div>
         )}

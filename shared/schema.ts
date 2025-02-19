@@ -81,17 +81,72 @@ export interface GameplayDetails {
   };
 }
 
-// Premium feature limits
+// Add after the GameplayDetails interface
+export interface WorldBuildingDetails {
+  worldName: string;
+  cosmology: {
+    origin: string;
+    magicSystem?: string;
+    technology?: string;
+    naturalLaws: string[];
+  };
+  environment: {
+    geography: string;
+    climate: string;
+    landmarks: string[];
+    settlements: Array<{
+      name: string;
+      description: string;
+      significance: string;
+    }>;
+  };
+  society: {
+    factions: Array<{
+      name: string;
+      description: string;
+      relationships: string;
+      influence: string;
+    }>;
+    cultures: Array<{
+      name: string;
+      traditions: string[];
+      beliefs: string;
+      customsAndRituals: string[];
+    }>;
+    politics: {
+      powerStructure: string;
+      majorConflicts: string[];
+      alliances: string[];
+    };
+  };
+  history: {
+    timeline: Array<{
+      era: string;
+      description: string;
+      significantEvents: string[];
+    }>;
+    legends: string[];
+    artifacts: Array<{
+      name: string;
+      description: string;
+      significance: string;
+    }>;
+  };
+}
+
+// Update Premium feature limits
 export const FREE_TIER_LIMITS = {
   GENERATIONS_PER_DAY: 3,
   STORY_LENGTH_LIMIT: "Medium" as StoryLength,
   GAMEPLAY_DETAILS: false,
-  IMPROVE_PROMPT: false
+  IMPROVE_PROMPT: false,
+  WORLD_BUILDING: false
 } as const;
 
 export const PREMIUM_TIER_LIMITS = {
   GENERATIONS_PER_DAY: 50,
   STORY_LENGTH_LIMIT: "Long" as StoryLength,
   GAMEPLAY_DETAILS: true,
-  IMPROVE_PROMPT: true
+  IMPROVE_PROMPT: true,
+  WORLD_BUILDING: true
 } as const;

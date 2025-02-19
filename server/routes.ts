@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails } from "./utils/openai";
+import { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails, generateWorldBuilding } from "./utils/openai";
 import { z } from "zod";
 
 const generateIdeaSchema = z.object({
@@ -107,6 +107,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.isPremium
       );
       res.json(gameplayDetails);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  app.post("/api/world-building", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const worldDetails = await generateWorldBuilding(
+        req.body,
+        req.user.id.toString(),
+        req.user.isPremium
+      );
+      res.json(worldDetails);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       res.status(500).json({ error: errorMessage });
