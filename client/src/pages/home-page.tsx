@@ -5,13 +5,15 @@ import IdeaGeneratorForm from "@/components/idea-generator-form";
 import StoryDisplay from "@/components/story-display";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Story, GameplayDetails } from "@shared/schema";
-import { LogOut, GamepadIcon, Sparkles, BookText } from "lucide-react";
+import { LogOut, GamepadIcon, Sparkles, BookText, Star } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import GameplayDetailsDisplay from "@/components/gameplay-details";
+import PremiumFeaturesCard from "@/components/premium-features-card"; // Assuming this component exists
+
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
@@ -48,6 +50,8 @@ export default function HomePage() {
     }
   });
 
+  const isPremium = user?.isPremium;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <header className="bg-white border-b sticky top-0 z-10">
@@ -69,6 +73,9 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <PremiumFeaturesCard />
+        </div>
         <Tabs defaultValue="story" className="space-y-8">
           <TabsList className="grid w-[400px] grid-cols-2 mx-auto bg-white shadow-sm">
             <TabsTrigger value="story" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -187,12 +194,24 @@ export default function HomePage() {
             </div>
           </TabsContent>
         </Tabs>
+        {!isPremium && gameplayDetails && (
+          <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="flex items-center gap-2 text-primary">
+              <Star className="h-5 w-5" />
+              <p className="text-sm font-medium">
+                Upgrade to Premium for more detailed gameplay mechanics and unlimited generations!
+              </p>
+            </div>
+          </div>
+        )}
         {gameplayDetails && (
           <div className="mt-8 space-y-6">
             <div className="space-y-2">
               <h2 className="text-2xl font-bold tracking-tight">Gameplay Details</h2>
               <p className="text-muted-foreground">
-                Detailed mechanics and systems for your game concept.
+                {isPremium
+                  ? "Detailed mechanics and systems for your game concept."
+                  : "Basic gameplay mechanics for your game concept. Upgrade to Premium for more details!"}
               </p>
             </div>
             <GameplayDetailsDisplay

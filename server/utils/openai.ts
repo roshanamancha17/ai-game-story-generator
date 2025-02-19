@@ -106,20 +106,34 @@ async function retryWithBackoff<T>(
   }
 }
 
+// Rate limiting configuration
+const FREE_TIER_LIMITS = {
+  GENERATIONS_PER_DAY: 10,
+  IMPROVE_PROMPT: true,
+  GAMEPLAY_DETAILS: false,
+};
+
+const PREMIUM_TIER_LIMITS = {
+  GENERATIONS_PER_DAY: 100,
+  IMPROVE_PROMPT: true,
+  GAMEPLAY_DETAILS: true,
+};
+
+
 // Simple rate limiter using a Map
 const requestTimes = new Map<string, number[]>();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 5;
+const RATE_LIMIT_WINDOW = 86400000; // 24 hours in milliseconds
 
-function isRateLimited(userId: string): boolean {
+function isRateLimited(userId: string, isPremium: boolean): boolean {
   const now = Date.now();
   const userRequests = requestTimes.get(userId) || [];
 
-  // Remove old requests outside the window
+  // Remove requests older than the window
   const recentRequests = userRequests.filter(time => now - time < RATE_LIMIT_WINDOW);
   requestTimes.set(userId, recentRequests);
 
-  return recentRequests.length >= MAX_REQUESTS_PER_WINDOW;
+  const limit = isPremium ? PREMIUM_TIER_LIMITS.GENERATIONS_PER_DAY : FREE_TIER_LIMITS.GENERATIONS_PER_DAY;
+  return recentRequests.length >= limit;
 }
 
 function addRequest(userId: string) {
@@ -241,10 +255,16 @@ function generateFallbackIdea(input: IdeaGenerationInput): IdeaGenerationOutput 
   };
 }
 
-async function generateImprovedPrompt(input: IdeaGenerationInput, userId: string): Promise<PromptImprovementOutput> {
+async function generateImprovedPrompt(
+  input: IdeaGenerationInput,
+  userId: string,
+  isPremium: boolean = false
+): Promise<PromptImprovementOutput> {
   try {
-    if (isRateLimited(userId)) {
-      throw new Error('Please wait a moment before making another request.');
+    if (isRateLimited(userId, isPremium)) {
+      throw new Error(isPremium
+        ? 'You have reached your premium tier daily limit. Please try again tomorrow.'
+        : 'You have reached your free tier daily limit. Upgrade to premium for more generations!');
     }
 
     if (isCircuitOpen()) {
@@ -304,10 +324,12 @@ async function generateImprovedPrompt(input: IdeaGenerationInput, userId: string
   }
 }
 
-async function generateGameIdea(input: IdeaGenerationInput, userId: string): Promise<IdeaGenerationOutput> {
+async function generateGameIdea(input: IdeaGenerationInput, userId: string, isPremium: boolean = false): Promise<IdeaGenerationOutput> {
   try {
-    if (isRateLimited(userId)) {
-      throw new Error('Please wait a moment before generating another idea.');
+    if (isRateLimited(userId, isPremium)) {
+      throw new Error(isPremium
+        ? 'You have reached your premium tier daily limit. Please try again tomorrow.'
+        : 'You have reached your free tier daily limit. Upgrade to premium for more generations!');
     }
 
     if (isCircuitOpen()) {
@@ -365,10 +387,12 @@ async function generateGameIdea(input: IdeaGenerationInput, userId: string): Pro
   }
 }
 
-async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
+async function generateGameStory(input: StoryInput, userId: string, isPremium: boolean = false): Promise<StoryOutput> {
   try {
-    if (isRateLimited(userId)) {
-      throw new Error('Please wait a moment before generating another story.');
+    if (isRateLimited(userId, isPremium)) {
+      throw new Error(isPremium
+        ? 'You have reached your premium tier daily limit. Please try again tomorrow.'
+        : 'You have reached your free tier daily limit. Upgrade to premium for more generations!');
     }
 
     if (isCircuitOpen()) {
@@ -458,15 +482,19 @@ interface GameplayDetails {
 // Add this new function after the other generation functions
 async function generateGameplayDetails(
   input: IdeaGenerationOutput,
-  userId: string
+  userId: string,
+  isPremium: boolean = false
 ): Promise<GameplayDetails> {
-  try {
-    if (isRateLimited(userId)) {
-      throw new Error('Please wait a moment before generating gameplay details.');
-    }
+  if (!isPremium && !PREMIUM_TIER_LIMITS.GAMEPLAY_DETAILS) {
+    // Return basic gameplay details for free tier
+    return generateFallbackGameplayDetails(input);
+  }
 
-    if (isCircuitOpen()) {
-      return generateFallbackGameplayDetails(input);
+  try {
+    if (isRateLimited(userId, isPremium)) {
+      throw new Error(isPremium
+        ? 'You have reached your premium tier daily limit. Please try again tomorrow.'
+        : 'You have reached your free tier daily limit. Upgrade to premium for more generations!');
     }
 
     addRequest(userId);

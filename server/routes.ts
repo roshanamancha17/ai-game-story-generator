@@ -24,7 +24,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { description } = generateIdeaSchema.parse(req.body);
 
-      const idea = await generateGameIdea({ description }, req.user.id.toString());
+      const idea = await generateGameIdea({ description }, req.user.id.toString(), req.user.isPremium);
       res.json(idea);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -40,7 +40,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { description } = improvePromptSchema.parse(req.body);
 
-      const improved = await generateImprovedPrompt({ description }, req.user.id.toString());
+      const improved = await generateImprovedPrompt(
+        { description }, 
+        req.user.id.toString(),
+        req.user.isPremium
+      );
       res.json(improved);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -59,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gameTitle: req.body.gameTitle,
         mainCharacter: req.body.mainCharacter,
         storyLength: req.body.storyLength
-      }, req.user.id.toString());
+      }, req.user.id.toString(), req.user.isPremium);
 
       const savedStory = await storage.createStory({
         userId: req.user.id,
@@ -97,7 +101,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const gameplayDetails = await generateGameplayDetails(req.body, req.user.id.toString());
+      const gameplayDetails = await generateGameplayDetails(
+        req.body, 
+        req.user.id.toString(),
+        req.user.isPremium
+      );
       res.json(gameplayDetails);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

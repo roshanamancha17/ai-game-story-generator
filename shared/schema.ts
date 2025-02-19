@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, jsonb, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -6,6 +6,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  isPremium: boolean("is_premium").notNull().default(false),
+  premiumUntil: timestamp("premium_until"),
 });
 
 export const stories = pgTable("stories", {
@@ -55,7 +57,7 @@ export const storyLengthSchema = z.enum([
 export type StoryGenre = z.infer<typeof storyGenreSchema>;
 export type StoryLength = z.infer<typeof storyLengthSchema>;
 
-// New schema for gameplay mechanics
+// Gameplay mechanics schema
 export interface GameplayDetails {
   playerMovement: {
     basicControls: string[];
@@ -78,3 +80,18 @@ export interface GameplayDetails {
     puzzleTypes?: string[];
   };
 }
+
+// Premium feature limits
+export const FREE_TIER_LIMITS = {
+  GENERATIONS_PER_DAY: 3,
+  STORY_LENGTH_LIMIT: "Medium" as StoryLength,
+  GAMEPLAY_DETAILS: false,
+  IMPROVE_PROMPT: false
+} as const;
+
+export const PREMIUM_TIER_LIMITS = {
+  GENERATIONS_PER_DAY: 50,
+  STORY_LENGTH_LIMIT: "Long" as StoryLength,
+  GAMEPLAY_DETAILS: true,
+  IMPROVE_PROMPT: true
+} as const;
