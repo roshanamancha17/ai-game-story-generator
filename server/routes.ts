@@ -2,11 +2,31 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { generateGameStory } from "./utils/openai";
-import { insertStorySchema } from "@shared/schema";
+import { generateGameStory, generateGameIdea } from "./utils/openai";
+import { z } from "zod";
+
+const generateIdeaSchema = z.object({
+  description: z.string().min(1, "Description is required").max(500, "Description too long")
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  app.post("/api/generate-idea", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const { description } = generateIdeaSchema.parse(req.body);
+
+      const idea = await generateGameIdea({ description }, req.user.id.toString());
+      res.json(idea);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
 
   app.post("/api/stories", async (req, res) => {
     if (!req.isAuthenticated()) {
