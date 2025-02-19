@@ -109,17 +109,73 @@ function addRequest(userId: string) {
 
 // Fallback story generator for when OpenAI is unavailable
 function generateFallbackStory(input: StoryInput): StoryOutput {
-  return {
-    title: input.gameTitle,
-    introduction: `A ${input.genre.toLowerCase()} story featuring ${input.mainCharacter}. (Story generation is temporarily unavailable. Please try again later.)`,
-    mainQuest: "Main quest will be generated when the service is available again.",
-    sideQuests: ["Side quests will be generated when the service is available again."],
-    characters: [{
-      name: input.mainCharacter,
-      role: "Protagonist",
-      description: "Character details will be generated when the service is available again."
-    }]
+  // Genre-specific story elements
+  const genreElements = {
+    Fantasy: {
+      setting: "mystical realm",
+      antagonist: "dark sorcerer",
+      items: ["ancient magical artifact", "enchanted weapon", "mystical map"],
+      challenges: ["ancient curse", "magical barrier", "dragon's lair"]
+    },
+    "Sci-Fi": {
+      setting: "distant space colony",
+      antagonist: "rogue AI",
+      items: ["advanced technology", "quantum device", "alien artifact"],
+      challenges: ["system malfunction", "hostile aliens", "time paradox"]
+    },
+    Horror: {
+      setting: "abandoned facility",
+      antagonist: "supernatural entity",
+      items: ["mysterious journal", "ritual components", "ancient relic"],
+      challenges: ["psychological terror", "survival", "dark rituals"]
+    },
+    Mystery: {
+      setting: "noir city",
+      antagonist: "hidden mastermind",
+      items: ["crucial evidence", "secret documents", "mysterious key"],
+      challenges: ["complex conspiracies", "false leads", "time pressure"]
+    },
+    RPG: {
+      setting: "vast open world",
+      antagonist: "legendary warrior",
+      items: ["legendary equipment", "rare resources", "ancient scrolls"],
+      challenges: ["epic battles", "skill trials", "moral choices"]
+    }
   };
+
+  const elements = genreElements[input.genre];
+  const introLength = input.storyLength === "Short" ? "brief" : input.storyLength === "Long" ? "epic" : "compelling";
+
+  // Generate a structured story based on genre and input
+  const story: StoryOutput = {
+    title: input.gameTitle,
+    introduction: `In the ${elements.setting} of ${input.gameTitle}, a ${introLength} tale unfolds. ${input.mainCharacter} emerges as an unlikely hero, destined to face the challenges that threaten this world. As darkness looms and the ${elements.antagonist} grows in power, our hero must rise to meet their destiny.`,
+    mainQuest: `Defeat the ${elements.antagonist} who threatens to destroy the ${elements.setting}. Gather the ${elements.items[0]} and master its power before it's too late.`,
+    sideQuests: [
+      `Explore the ${elements.setting} to find the legendary ${elements.items[1]}.`,
+      `Help the local inhabitants overcome the ${elements.challenges[0]}.`,
+      `Investigate the mystery of the ${elements.items[2]} and its connection to the ${elements.antagonist}.`
+    ],
+    characters: [
+      {
+        name: input.mainCharacter,
+        role: "Protagonist",
+        description: `A determined hero who must overcome their limitations to save the ${elements.setting}. Armed with courage and destiny, they face the greatest challenges of their life.`
+      },
+      {
+        name: `Guardian of the ${elements.items[0]}`,
+        role: "Mentor",
+        description: `An enigmatic figure who guides the hero in their quest to master the power of the ${elements.items[0]}.`
+      },
+      {
+        name: `The ${elements.antagonist}`,
+        role: "Antagonist",
+        description: `A powerful force of evil threatening to unleash chaos upon the ${elements.setting}. Their mastery of ${elements.challenges[1]} makes them a formidable opponent.`
+      }
+    ]
+  };
+
+  return story;
 }
 
 export async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
