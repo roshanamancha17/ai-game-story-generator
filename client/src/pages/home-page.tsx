@@ -31,14 +31,6 @@ export default function HomePage() {
     setGeneratedIdea(idea);
   };
 
-  const handleIdeaForStory = (idea: any) => {
-    setGeneratedIdea(idea);
-    const storyForm = document.querySelector('#story-generator-form');
-    if (storyForm) {
-      storyForm.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const generateGameplayMutation = useMutation({
     mutationFn: async (concept: any) => {
       const res = await apiRequest("POST", "/api/gameplay-details", concept);
@@ -50,6 +42,7 @@ export default function HomePage() {
         title: "Gameplay details generated!",
         description: "Check out the detailed mechanics for your game concept."
       });
+      // Also generate world building details
       if (generatedIdea) {
         generateWorldBuildingMutation.mutate(generatedIdea);
       }
@@ -128,35 +121,11 @@ export default function HomePage() {
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold tracking-tight">Generate New Story</h2>
                   <p className="text-muted-foreground">
-                    Create a unique game story by filling out the form or generating from text.
+                    Create a unique game story by filling out the form below.
                   </p>
                 </div>
-
-                <div className="bg-white p-6 rounded-lg shadow-sm border space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">Generate from Text</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Describe your game idea and we'll help structure it into a story.
-                    </p>
-                  </div>
-                  <IdeaGeneratorForm onIdeaGenerated={handleIdeaForStory} />
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow-sm border" id="story-generator-form">
-                  <div className="space-y-2 mb-4">
-                    <h3 className="text-lg font-semibold">Manual Story Generation</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Or fill out the form manually to create your story.
-                    </p>
-                  </div>
-                  <StoryGeneratorForm 
-                    defaultValues={generatedIdea ? {
-                      genre: generatedIdea.genre,
-                      gameTitle: generatedIdea.gameTitle,
-                      mainCharacter: generatedIdea.mainCharacter,
-                      storyLength: generatedIdea.storyLength || "Medium"
-                    } : undefined}
-                  />
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                  <StoryGeneratorForm />
                 </div>
               </div>
 

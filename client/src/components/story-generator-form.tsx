@@ -22,31 +22,20 @@ const formSchema = z.object({
   storyLength: storyLengthSchema
 });
 
-interface StoryGeneratorFormProps {
-  defaultValues?: z.infer<typeof formSchema>;
-}
-
-export default function StoryGeneratorForm({ defaultValues }: StoryGeneratorFormProps = {}) {
+export default function StoryGeneratorForm() {
   const { toast } = useToast();
   const lastRequestTime = useRef<number>(0);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues || {
+    defaultValues: {
       genre: "Fantasy",
       gameTitle: "",
       mainCharacter: "",
       storyLength: "Medium"
     }
   });
-
-  // Reset form when defaultValues change
-  useEffect(() => {
-    if (defaultValues) {
-      form.reset(defaultValues);
-    }
-  }, [defaultValues, form]);
 
   const checkCooldown = useCallback(() => {
     const now = Date.now();
