@@ -16,17 +16,22 @@ export default function PremiumFeaturesCard() {
     },
     {
       name: "Story Length",
-      free: FREE_TIER_LIMITS.STORY_LENGTH_LIMIT,
-      premium: PREMIUM_TIER_LIMITS.STORY_LENGTH_LIMIT
+      free: "Short and Medium",
+      premium: "All lengths including Long stories"
     },
     {
       name: "Gameplay Details",
-      free: "Basic",
+      free: "Basic mechanics",
       premium: "Detailed mechanics & systems"
     },
     {
+      name: "World Building",
+      free: "Basic world information",
+      premium: "Advanced lore & world details"
+    },
+    {
       name: "Prompt Improvement",
-      free: "Not available",
+      free: "Basic refinement",
       premium: "AI-powered refinement"
     }
   ];
