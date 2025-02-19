@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCallback, useRef, useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
 
@@ -24,6 +25,8 @@ const formSchema = z.object({
 
 export default function StoryGeneratorForm() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isPremium = user?.isPremium;
   const lastRequestTime = useRef<number>(0);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
 
@@ -99,6 +102,20 @@ export default function StoryGeneratorForm() {
           </Alert>
         )}
 
+        {!isPremium && (
+          <div className="bg-primary/10 border-2 border-primary/20 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Star className="h-5 w-5 text-primary" />
+              <div>
+                <h3 className="font-semibold text-primary text-sm">Premium Features Available</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upgrade to access longer stories, detailed gameplay mechanics, and advanced world-building!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <FormField
           control={form.control}
           name="genre"
@@ -165,8 +182,19 @@ export default function StoryGeneratorForm() {
           name="storyLength"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Story Length</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={generateMutation.isPending}>
+              <FormLabel className="flex items-center gap-2">
+                Story Length
+                {!isPremium && (
+                  <span className="text-xs text-muted-foreground">
+                    (Premium unlocks longer stories)
+                  </span>
+                )}
+              </FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value} 
+                disabled={generateMutation.isPending}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select length" />
@@ -175,7 +203,9 @@ export default function StoryGeneratorForm() {
                 <SelectContent>
                   <SelectItem value="Short">Short</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Long">Long</SelectItem>
+                  <SelectItem value="Long" disabled={!isPremium}>
+                    Long (Premium)
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -199,6 +229,16 @@ export default function StoryGeneratorForm() {
             'Generate Story'
           )}
         </Button>
+
+        {isPremium ? (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Premium features active: Advanced gameplay mechanics and world-building included
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Free tier: Basic story generation only
+          </p>
+        )}
       </form>
     </Form>
   );

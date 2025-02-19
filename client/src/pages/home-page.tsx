@@ -222,12 +222,15 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
         {!isPremium && gameplayDetails && (
-          <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-center gap-2 text-primary">
-              <Star className="h-5 w-5" />
-              <p className="text-sm font-medium">
-                Upgrade to Premium for more detailed gameplay mechanics and unlimited generations!
-              </p>
+          <div className="mt-4 bg-primary/10 border-2 border-primary/20 rounded-lg p-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <Star className="h-6 w-6 text-primary animate-pulse" />
+              <div>
+                <h3 className="font-semibold text-primary mb-1">Unlock Premium Features</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upgrade to Premium for more detailed gameplay mechanics, world-building features, and unlimited generations!
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -241,16 +244,6 @@ export default function HomePage() {
                   : "Basic gameplay mechanics for your game concept. Upgrade to Premium for more details!"}
               </p>
             </div>
-            {!isPremium && (
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 mb-4">
-                <div className="flex items-center gap-2 text-primary">
-                  <Star className="h-5 w-5" />
-                  <p className="text-sm font-medium">
-                    Upgrade to Premium for more detailed gameplay mechanics and unlimited generations!
-                  </p>
-                </div>
-              </div>
-            )}
             <GameplayDetailsDisplay
               details={gameplayDetails}
               title={generatedIdea?.gameTitle || "Game Concept"}
