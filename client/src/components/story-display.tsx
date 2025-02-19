@@ -22,8 +22,8 @@ export default function StoryDisplay({ story }: StoryDisplayProps) {
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg">
-      <CardHeader className="bg-muted/50">
+    <Card className="overflow-hidden transition-all hover:shadow-md bg-white">
+      <CardHeader className="bg-primary/5 border-b">
         <CardTitle className="flex justify-between items-center">
           <span className="text-lg font-semibold">{content.title}</span>
           <span className="text-xs text-muted-foreground">
@@ -75,10 +75,10 @@ export default function StoryDisplay({ story }: StoryDisplayProps) {
               </div>
               <div className="grid gap-4">
                 {content.characters.map((character, index) => (
-                  <div key={index} className="space-y-1 p-3 rounded-lg bg-muted/50">
+                  <div key={index} className="space-y-1 p-3 rounded-lg bg-primary/5">
                     <div className="flex justify-between items-start">
                       <span className="font-medium text-sm">{character.name}</span>
-                      <span className="text-xs text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                         {character.role}
                       </span>
                     </div>
