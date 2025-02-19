@@ -219,7 +219,8 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-16 border-t pt-8">
+        <div className="mt-16">
+          <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
           <PremiumFeaturesSection />
         </div>
 

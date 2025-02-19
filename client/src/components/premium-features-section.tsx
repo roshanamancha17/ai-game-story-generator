@@ -33,43 +33,52 @@ const premiumFeatures: PremiumFeature[] = [
 
 export default function PremiumFeaturesSection() {
   return (
-    <section className="py-8 space-y-6">
-      <div className="text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary">
-          <Crown className="h-4 w-4" />
-          <span className="text-sm font-medium">Premium Features</span>
+    <section className="py-12 px-4 relative overflow-hidden">
+      {/* Background gradient effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
+
+      <div className="max-w-6xl mx-auto relative">
+        <div className="text-center space-y-6 mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary border border-primary/30 shadow-sm">
+            <Crown className="h-5 w-5" />
+            <span className="text-sm font-semibold">Premium Features</span>
+          </div>
+          <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Unlock the Full Creative Power
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Upgrade to Premium to access advanced features and create richer, more detailed game stories with unlimited generation capabilities.
+          </p>
         </div>
-        <h2 className="text-3xl font-bold tracking-tight">
-          Unlock the Full Creative Power
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Upgrade to Premium to access advanced features and create richer, more detailed game stories with unlimited generation capabilities.
-        </p>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {premiumFeatures.map((feature, index) => (
-          <Card key={index} className="relative overflow-hidden border-primary/20 bg-primary/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
-            <CardHeader className="relative">
-              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                {feature.icon}
-              </div>
-              <CardTitle className="text-lg">{feature.title}</CardTitle>
-              <CardDescription>{feature.description}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {premiumFeatures.map((feature, index) => (
+            <Card key={index} className="relative group hover:shadow-lg transition-all duration-300 border-primary/20 bg-gradient-to-br from-white to-primary/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative">
+                <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/15 text-primary group-hover:scale-110 transition-transform">
+                  {feature.icon}
+                </div>
+                <CardTitle className="text-xl mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  {feature.title}
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  {feature.description}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
 
-      <div className="mt-8 text-center">
-        <Button size="lg" className="px-8">
-          <Star className="mr-2 h-4 w-4" />
-          Upgrade to Premium
-        </Button>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Unlock all premium features and elevate your game story creation
-        </p>
+        <div className="mt-12 text-center">
+          <Button size="lg" className="px-8 py-6 text-lg shadow-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary">
+            <Star className="mr-2 h-5 w-5" />
+            Upgrade to Premium
+          </Button>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Join premium users and elevate your game story creation experience
+          </p>
+        </div>
       </div>
     </section>
   );
