@@ -31,8 +31,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(savedStory);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
     }
   });
 
@@ -44,8 +45,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stories = await storage.getStoriesByUserId(req.user.id);
       res.json(stories);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
     }
   });
 

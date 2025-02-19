@@ -1,4 +1,3 @@
-import { IStorage } from "./storage";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { InsertUser, User, Story, InsertStory } from "@shared/schema";

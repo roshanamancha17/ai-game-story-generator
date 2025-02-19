@@ -40,7 +40,7 @@ export async function generateGameStory(input: StoryInput): Promise<StoryOutput>
           Genre: ${input.genre}
           Game Title: ${input.gameTitle}
           Main Character: ${input.mainCharacter}
-          
+
           Format the response as a JSON object with the following structure:
           {
             "title": "Game title",
@@ -58,7 +58,12 @@ export async function generateGameStory(input: StoryInput): Promise<StoryOutput>
       response_format: { type: "json_object" }
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    return JSON.parse(content) as StoryOutput;
   } catch (error) {
     console.error('Error generating story:', error);
     throw new Error('Failed to generate story');
