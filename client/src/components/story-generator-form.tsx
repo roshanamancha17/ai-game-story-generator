@@ -11,6 +11,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useCallback, useRef } from "react";
+
+const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
 
 const formSchema = z.object({
   genre: storyGenreSchema,
@@ -21,6 +24,8 @@ const formSchema = z.object({
 
 export default function StoryGeneratorForm() {
   const { toast } = useToast();
+  const lastRequestTime = useRef<number>(0);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -31,8 +36,20 @@ export default function StoryGeneratorForm() {
     }
   });
 
+  const checkCooldown = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime.current;
+
+    if (timeSinceLastRequest < COOLDOWN_PERIOD) {
+      const remainingSeconds = Math.ceil((COOLDOWN_PERIOD - timeSinceLastRequest) / 1000);
+      throw new Error(`Please wait ${remainingSeconds} seconds before generating another story.`);
+    }
+  }, []);
+
   const generateMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      checkCooldown();
+      lastRequestTime.current = Date.now();
       const res = await apiRequest("POST", "/api/stories", values);
       return res.json();
     },
