@@ -29,19 +29,51 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Circuit breaker state
+let consecutiveFailures = 0;
+const FAILURE_THRESHOLD = 3;
+const CIRCUIT_RESET_TIMEOUT = 60000; // 1 minute
+let circuitBreakerTimer: NodeJS.Timeout | null = null;
+
+function resetCircuitBreaker() {
+  consecutiveFailures = 0;
+  if (circuitBreakerTimer) {
+    clearTimeout(circuitBreakerTimer);
+    circuitBreakerTimer = null;
+  }
+}
+
+function isCircuitOpen() {
+  return consecutiveFailures >= FAILURE_THRESHOLD;
+}
+
 async function retryWithBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   initialDelayMs: number = 1000
 ): Promise<T> {
+  if (isCircuitOpen()) {
+    throw new Error('Service temporarily unavailable. Please try again in a minute.');
+  }
+
   let retries = 0;
   let delay = initialDelayMs;
 
   while (true) {
     try {
-      return await operation();
+      const result = await operation();
+      resetCircuitBreaker();
+      return result;
     } catch (error: any) {
       if (error.status !== 429 || retries >= maxRetries) {
+        consecutiveFailures++;
+
+        if (consecutiveFailures >= FAILURE_THRESHOLD && !circuitBreakerTimer) {
+          circuitBreakerTimer = setTimeout(() => {
+            resetCircuitBreaker();
+          }, CIRCUIT_RESET_TIMEOUT);
+        }
+
         throw error;
       }
 
@@ -73,6 +105,21 @@ function addRequest(userId: string) {
   const userRequests = requestTimes.get(userId) || [];
   userRequests.push(Date.now());
   requestTimes.set(userId, userRequests);
+}
+
+// Fallback story generator for when OpenAI is unavailable
+function generateFallbackStory(input: StoryInput): StoryOutput {
+  return {
+    title: input.gameTitle,
+    introduction: `A ${input.genre.toLowerCase()} story featuring ${input.mainCharacter}. (Story generation is temporarily unavailable. Please try again later.)`,
+    mainQuest: "Main quest will be generated when the service is available again.",
+    sideQuests: ["Side quests will be generated when the service is available again."],
+    characters: [{
+      name: input.mainCharacter,
+      role: "Protagonist",
+      description: "Character details will be generated when the service is available again."
+    }]
+  };
 }
 
 export async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
@@ -126,6 +173,10 @@ export async function generateGameStory(input: StoryInput, userId: string): Prom
     console.error('Error generating story:', error);
 
     if (error.status === 429) {
+      if (isCircuitOpen()) {
+        console.log('Circuit breaker active, using fallback response');
+        return generateFallbackStory(input);
+      }
       throw new Error('The AI service is temporarily at capacity. Please wait a minute before trying again. We automatically retry your request a few times before showing this message.');
     }
 
@@ -134,7 +185,7 @@ export async function generateGameStory(input: StoryInput, userId: string): Prom
     }
 
     if (error.status === 500) {
-      throw new Error('OpenAI service is temporarily unavailable. Please try again later.');
+      return generateFallbackStory(input);
     }
 
     // Pass through custom rate limit message
@@ -142,6 +193,8 @@ export async function generateGameStory(input: StoryInput, userId: string): Prom
       throw error;
     }
 
-    throw new Error('Failed to generate story. Please try again.');
+    // For any other errors, use the fallback
+    console.log('Unexpected error, using fallback response');
+    return generateFallbackStory(input);
   }
 }
