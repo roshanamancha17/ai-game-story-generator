@@ -2,10 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { generateGameStory, generateGameIdea } from "./utils/openai";
+import { generateGameStory, generateGameIdea, generateImprovedPrompt } from "./utils/openai";
 import { z } from "zod";
 
 const generateIdeaSchema = z.object({
+  description: z.string().min(1, "Description is required").max(500, "Description too long")
+});
+
+const improvePromptSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
 });
 
@@ -22,6 +26,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const idea = await generateGameIdea({ description }, req.user.id.toString());
       res.json(idea);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  app.post("/api/improve-prompt", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const { description } = improvePromptSchema.parse(req.body);
+
+      const improved = await generateImprovedPrompt({ description }, req.user.id.toString());
+      res.json(improved);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       res.status(500).json({ error: errorMessage });

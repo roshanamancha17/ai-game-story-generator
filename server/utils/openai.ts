@@ -37,6 +37,11 @@ interface IdeaGenerationOutput {
   conceptDescription: string;
 }
 
+interface PromptImprovementOutput {
+  improvedPrompt: string;
+  reasoning: string;
+}
+
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -190,8 +195,154 @@ function generateFallbackStory(input: StoryInput): StoryOutput {
   return story;
 }
 
+async function generateImprovedPrompt(input: IdeaGenerationInput, userId: string): Promise<PromptImprovementOutput> {
+  try {
+    if (isRateLimited(userId)) {
+      throw new Error('You have reached the maximum number of generations per minute. Please wait a moment and try again.');
+    }
 
-export async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
+    if (isCircuitOpen()) {
+      return {
+        improvedPrompt: input.description,
+        reasoning: "Prompt improvement is temporarily unavailable. Using original prompt."
+      };
+    }
+
+    addRequest(userId);
+
+    const response = await retryWithBackoff(async () => {
+      return await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at improving game concept descriptions to generate better game ideas. Help refine the user's input to include more specific details and creative elements."
+          },
+          {
+            role: "user",
+            content: `Improve this game concept description to include more specific details about gameplay, setting, and unique features:
+            "${input.description}"
+
+            Format the response as a JSON object with the following structure:
+            {
+              "improvedPrompt": "The improved description with more details",
+              "reasoning": "Brief explanation of what was added/changed and why"
+            }`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    return JSON.parse(content) as PromptImprovementOutput;
+  } catch (error: any) {
+    console.error('Error improving prompt:', error);
+    return {
+      improvedPrompt: input.description,
+      reasoning: "Failed to improve prompt. Using original description."
+    };
+  }
+}
+
+function generateFallbackIdea(input: IdeaGenerationInput): IdeaGenerationOutput {
+  // Extract keywords from input to determine genre
+  const keywords = input.description.toLowerCase();
+  let genre: StoryGenre = "Fantasy"; // Default genre
+
+  if (keywords.includes("space") || keywords.includes("future") || keywords.includes("technology")) {
+    genre = "Sci-Fi";
+  } else if (keywords.includes("horror") || keywords.includes("scary") || keywords.includes("dark")) {
+    genre = "Horror";
+  } else if (keywords.includes("detective") || keywords.includes("solve") || keywords.includes("mystery")) {
+    genre = "Mystery";
+  } else if (keywords.includes("role") || keywords.includes("adventure") || keywords.includes("quest")) {
+    genre = "RPG";
+  }
+
+  return {
+    genre,
+    gameTitle: `The ${input.description.split(' ').slice(0, 3).join(' ')}`,
+    mainCharacter: "A mysterious protagonist ready for adventure",
+    storyLength: "Medium",
+    conceptDescription: `A game based on your concept: ${input.description}. (Full idea generation is temporarily unavailable. Please try again later.)`
+  };
+}
+
+async function generateGameIdea(input: IdeaGenerationInput, userId: string): Promise<IdeaGenerationOutput> {
+  try {
+    if (isRateLimited(userId)) {
+      throw new Error('You have reached the maximum number of generations per minute. Please wait a moment and try again.');
+    }
+
+    if (isCircuitOpen()) {
+      console.log('Circuit breaker is open, using fallback response for idea generation');
+      return generateFallbackIdea(input);
+    }
+
+    addRequest(userId);
+
+    const response = await retryWithBackoff(async () => {
+      return await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a creative game designer who helps transform text descriptions into structured game concepts."
+          },
+          {
+            role: "user",
+            content: `Transform this description into a game concept:
+            ${input.description}
+
+            Format the response as a JSON object with the following structure:
+            {
+              "genre": one of ["Fantasy", "Sci-Fi", "Horror", "Mystery", "RPG"],
+              "gameTitle": "A catchy title for the game",
+              "mainCharacter": "Description of the main character",
+              "storyLength": one of ["Short", "Medium", "Long"],
+              "conceptDescription": "A brief description of the core game concept"
+            }`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    return JSON.parse(content) as IdeaGenerationOutput;
+  } catch (error: any) {
+    console.error('Error generating game idea:', error);
+
+    if (error.status === 429 || error.status === 500) {
+      console.log('Service error, using fallback response for idea generation');
+      return generateFallbackIdea(input);
+    }
+
+    if (error.status === 401) {
+      throw new Error('Invalid API key. Please check your OpenAI API key configuration.');
+    }
+
+    // Pass through custom rate limit message
+    if (error.message.includes('reached the maximum number')) {
+      throw error;
+    }
+
+    // For any other errors, use the fallback
+    console.log('Unexpected error, using fallback response for idea generation');
+    return generateFallbackIdea(input);
+  }
+}
+
+async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
   try {
     if (isRateLimited(userId)) {
       throw new Error('You have reached the maximum number of story generations per minute. Please wait a moment and try again.');
@@ -266,95 +417,4 @@ export async function generateGameStory(input: StoryInput, userId: string): Prom
   }
 }
 
-export async function generateGameIdea(input: IdeaGenerationInput, userId: string): Promise<IdeaGenerationOutput> {
-  try {
-    if (isRateLimited(userId)) {
-      throw new Error('You have reached the maximum number of generations per minute. Please wait a moment and try again.');
-    }
-
-    if (isCircuitOpen()) {
-      console.log('Circuit breaker is open, using fallback response for idea generation');
-      return generateFallbackIdea(input);
-    }
-
-    addRequest(userId);
-
-    const response = await retryWithBackoff(async () => {
-      return await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are a creative game designer who helps transform text descriptions into structured game concepts."
-          },
-          {
-            role: "user",
-            content: `Transform this description into a game concept:
-            ${input.description}
-
-            Format the response as a JSON object with the following structure:
-            {
-              "genre": one of ["Fantasy", "Sci-Fi", "Horror", "Mystery", "RPG"],
-              "gameTitle": "A catchy title for the game",
-              "mainCharacter": "Description of the main character",
-              "storyLength": one of ["Short", "Medium", "Long"],
-              "conceptDescription": "A brief description of the core game concept"
-            }`
-          }
-        ],
-        response_format: { type: "json_object" }
-      });
-    });
-
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error('No content received from OpenAI');
-    }
-
-    return JSON.parse(content) as IdeaGenerationOutput;
-  } catch (error: any) {
-    console.error('Error generating game idea:', error);
-
-    if (error.status === 429 || error.status === 500) {
-      console.log('Service error, using fallback response for idea generation');
-      return generateFallbackIdea(input);
-    }
-
-    if (error.status === 401) {
-      throw new Error('Invalid API key. Please check your OpenAI API key configuration.');
-    }
-
-    // Pass through custom rate limit message
-    if (error.message.includes('reached the maximum number')) {
-      throw error;
-    }
-
-    // For any other errors, use the fallback
-    console.log('Unexpected error, using fallback response for idea generation');
-    return generateFallbackIdea(input);
-  }
-}
-
-function generateFallbackIdea(input: IdeaGenerationInput): IdeaGenerationOutput {
-  // Extract keywords from input to determine genre
-  const keywords = input.description.toLowerCase();
-  let genre: StoryGenre = "Fantasy"; // Default genre
-
-  if (keywords.includes("space") || keywords.includes("future") || keywords.includes("technology")) {
-    genre = "Sci-Fi";
-  } else if (keywords.includes("horror") || keywords.includes("scary") || keywords.includes("dark")) {
-    genre = "Horror";
-  } else if (keywords.includes("detective") || keywords.includes("solve") || keywords.includes("mystery")) {
-    genre = "Mystery";
-  } else if (keywords.includes("role") || keywords.includes("adventure") || keywords.includes("quest")) {
-    genre = "RPG";
-  }
-
-  return {
-    genre,
-    gameTitle: `The ${input.description.split(' ').slice(0, 3).join(' ')}`,
-    mainCharacter: "A mysterious protagonist ready for adventure",
-    storyLength: "Medium",
-    conceptDescription: `A game based on your concept: ${input.description}. (Full idea generation is temporarily unavailable. Please try again later.)`
-  };
-}
+export { generateGameStory, generateGameIdea, generateImprovedPrompt };
