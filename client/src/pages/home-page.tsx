@@ -12,7 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import GameplayDetailsDisplay from "@/components/gameplay-details";
-import PremiumFeaturesSection from "@/components/premium-features-section";
+import PremiumFeaturesCard from "@/components/premium-features-card";
 import WorldBuildingDisplay from "@/components/world-building-display";
 
 
@@ -100,6 +100,9 @@ export default function HomePage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <PremiumFeaturesCard />
+        </div>
         <Tabs defaultValue="story" className="space-y-8">
           <TabsList className="grid w-[400px] grid-cols-2 mx-auto bg-white shadow-sm">
             <TabsTrigger value="story" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -218,12 +221,19 @@ export default function HomePage() {
             </div>
           </TabsContent>
         </Tabs>
-
-        <div className="mt-16">
-          <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          <PremiumFeaturesSection />
-        </div>
-
+        {!isPremium && gameplayDetails && (
+          <div className="mt-4 bg-primary/10 border-2 border-primary/20 rounded-lg p-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <Star className="h-6 w-6 text-primary animate-pulse" />
+              <div>
+                <h3 className="font-semibold text-primary mb-1">Unlock Premium Features</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upgrade to Premium for more detailed gameplay mechanics, world-building features, and unlimited generations!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {gameplayDetails && (
           <div className="mt-8 space-y-6">
             <div className="space-y-2">
