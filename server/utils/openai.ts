@@ -128,6 +128,11 @@ export async function generateGameStory(input: StoryInput, userId: string): Prom
       throw new Error('You have reached the maximum number of story generations per minute. Please wait a moment and try again.');
     }
 
+    if (isCircuitOpen()) {
+      console.log('Circuit breaker is open, using fallback response');
+      return generateFallbackStory(input);
+    }
+
     addRequest(userId);
 
     const response = await retryWithBackoff(async () => {
@@ -172,20 +177,13 @@ export async function generateGameStory(input: StoryInput, userId: string): Prom
   } catch (error: any) {
     console.error('Error generating story:', error);
 
-    if (error.status === 429) {
-      if (isCircuitOpen()) {
-        console.log('Circuit breaker active, using fallback response');
-        return generateFallbackStory(input);
-      }
-      throw new Error('The AI service is temporarily at capacity. Please wait a minute before trying again. We automatically retry your request a few times before showing this message.');
+    if (error.status === 429 || error.status === 500) {
+      console.log('Service error, using fallback response');
+      return generateFallbackStory(input);
     }
 
     if (error.status === 401) {
       throw new Error('Invalid API key. Please check your OpenAI API key configuration.');
-    }
-
-    if (error.status === 500) {
-      return generateFallbackStory(input);
     }
 
     // Pass through custom rate limit message
