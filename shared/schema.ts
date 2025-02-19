@@ -54,3 +54,27 @@ export const storyLengthSchema = z.enum([
 
 export type StoryGenre = z.infer<typeof storyGenreSchema>;
 export type StoryLength = z.infer<typeof storyLengthSchema>;
+
+// New schema for gameplay mechanics
+export interface GameplayDetails {
+  playerMovement: {
+    basicControls: string[];
+    specialMoves: string[];
+    navigationMechanics: string;
+  };
+  coreMechanics: {
+    mainGameplay: string;
+    uniqueFeatures: string[];
+    progression: string;
+  };
+  combatSystem?: {
+    attackTypes: string[];
+    defenseOptions: string[];
+    specialAbilities: string[];
+  };
+  environmentInteraction: {
+    interactiveElements: string[];
+    environmentalMechanics: string;
+    puzzleTypes?: string[];
+  };
+}

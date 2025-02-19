@@ -431,4 +431,217 @@ async function generateGameStory(input: StoryInput, userId: string): Promise<Sto
   }
 }
 
-export { generateGameStory, generateGameIdea, generateImprovedPrompt };
+interface GameplayDetails {
+  playerMovement: {
+    basicControls: string[];
+    specialMoves: string[];
+    navigationMechanics: string;
+  };
+  coreMechanics: {
+    mainGameplay: string;
+    uniqueFeatures: string[];
+    progression: string;
+  };
+  combatSystem: {
+    attackTypes: string[];
+    defenseOptions: string[];
+    specialAbilities: string[];
+  };
+  environmentInteraction: {
+    interactiveElements: string[];
+    environmentalMechanics: string;
+    puzzleTypes: string[];
+  };
+}
+
+
+// Add this new function after the other generation functions
+async function generateGameplayDetails(
+  input: IdeaGenerationOutput,
+  userId: string
+): Promise<GameplayDetails> {
+  try {
+    if (isRateLimited(userId)) {
+      throw new Error('Please wait a moment before generating gameplay details.');
+    }
+
+    if (isCircuitOpen()) {
+      return generateFallbackGameplayDetails(input);
+    }
+
+    addRequest(userId);
+
+    const response = await retryWithBackoff(async () => {
+      return await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a game design expert who specializes in creating detailed gameplay mechanics and systems."
+          },
+          {
+            role: "user",
+            content: `Create detailed gameplay mechanics for this game concept:
+            Title: ${input.gameTitle}
+            Genre: ${input.genre}
+            Main Character: ${input.mainCharacter}
+            Concept: ${input.conceptDescription}
+
+            Format the response as a JSON object matching the GameplayDetails type with these sections:
+            - playerMovement (basic controls, special moves, navigation)
+            - coreMechanics (main gameplay loop, unique features, progression)
+            - combatSystem (if applicable: attack types, defense options, special abilities)
+            - environmentInteraction (interactive elements, environmental mechanics, puzzle types)`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    return JSON.parse(content) as GameplayDetails;
+  } catch (error: any) {
+    console.error('Error generating gameplay details:', error);
+
+    if (error.message.includes('Invalid API key') || error.status === 401) {
+      throw new Error('The AI service is temporarily unavailable. Please try again in a few minutes.');
+    }
+
+    if (error.status === 429 || error.message.includes('rate limit')) {
+      throw new Error('Please wait a moment before generating gameplay details.');
+    }
+
+    return generateFallbackGameplayDetails(input);
+  }
+}
+
+function generateFallbackGameplayDetails(input: IdeaGenerationOutput): GameplayDetails {
+  const genreDefaults: Record<StoryGenre, GameplayDetails> = {
+    Fantasy: {
+      playerMovement: {
+        basicControls: ["Walk/Run", "Jump", "Dodge Roll"],
+        specialMoves: ["Double Jump", "Wall Climb", "Magic Dash"],
+        navigationMechanics: "Free-form exploration with unlockable movement abilities"
+      },
+      coreMechanics: {
+        mainGameplay: "Action-adventure combat with magic abilities and exploration",
+        uniqueFeatures: ["Spell Combining", "Environmental Magic", "Character Progression"],
+        progression: "Unlock new spells and abilities through story progression and exploration"
+      },
+      combatSystem: {
+        attackTypes: ["Melee Attacks", "Magic Spells", "Charged Attacks"],
+        defenseOptions: ["Block", "Parry", "Magic Shield"],
+        specialAbilities: ["Ultimate Spell", "Power Stance", "Element Fusion"]
+      },
+      environmentInteraction: {
+        interactiveElements: ["Magic Crystals", "Ancient Mechanisms", "Hidden Passages"],
+        environmentalMechanics: "Use magic to manipulate the environment and solve puzzles",
+        puzzleTypes: ["Elemental Puzzles", "Pattern Recognition", "Time-based Challenges"]
+      }
+    },
+    "Sci-Fi": {
+      playerMovement: {
+        basicControls: ["Walk/Run", "Jump", "Dash"],
+        specialMoves: ["Jetpack Boost", "Gravity Manipulation", "Time Shift"],
+        navigationMechanics: "Zero-gravity sections and tech-enhanced movement"
+      },
+      coreMechanics: {
+        mainGameplay: "Sci-fi combat with high-tech weapons and gadgets",
+        uniqueFeatures: ["Gadget System", "Tech Upgrades", "Time Manipulation"],
+        progression: "Upgrade technology and unlock new abilities through research"
+      },
+      combatSystem: {
+        attackTypes: ["Energy Weapons", "Tech Gadgets", "Drone Assists"],
+        defenseOptions: ["Energy Shield", "Teleport Dodge", "Counter Hack"],
+        specialAbilities: ["Overcharge Mode", "Drone Swarm", "Time Freeze"]
+      },
+      environmentInteraction: {
+        interactiveElements: ["Computer Terminals", "Security Systems", "Power Nodes"],
+        environmentalMechanics: "Hack and manipulate technology to progress",
+        puzzleTypes: ["Hacking Minigames", "Circuit Programming", "Physics Puzzles"]
+      }
+    },
+    Horror: {
+      playerMovement: {
+        basicControls: ["Walk/Crouch", "Sprint", "Peek"],
+        specialMoves: ["Quick Turn", "Slide", "Hide"],
+        navigationMechanics: "Stealth-focused movement with limited stamina"
+      },
+      coreMechanics: {
+        mainGameplay: "Survival horror with resource management and stealth",
+        uniqueFeatures: ["Sanity System", "Dynamic Fear Levels", "Environmental Storytelling"],
+        progression: "Find better equipment and unlock safe areas"
+      },
+      combatSystem: {
+        attackTypes: ["Light Attack", "Heavy Attack", "Last Resort"],
+        defenseOptions: ["Block", "Dodge", "Counter"],
+        specialAbilities: ["Adrenaline Rush", "Sixth Sense", "Fight or Flight"]
+      },
+      environmentInteraction: {
+        interactiveElements: ["Light Sources", "Hidden Items", "Escape Routes"],
+        environmentalMechanics: "Use environment to hide and survive",
+        puzzleTypes: ["Escape Room Puzzles", "Symbol Matching", "Sound-based Puzzles"]
+      }
+    },
+    Mystery: {
+      playerMovement: {
+        basicControls: ["Walk/Run", "Crouch", "Interact"],
+        specialMoves: ["Focus Mode", "Quick Search", "Track Clues"],
+        navigationMechanics: "Investigation-focused movement with detailed environment interaction"
+      },
+      coreMechanics: {
+        mainGameplay: "Detective work with clue gathering and deduction",
+        uniqueFeatures: ["Detective Vision", "Timeline Manipulation", "Deduction Board"],
+        progression: "Unlock new investigation tools and abilities"
+      },
+      combatSystem: {
+        attackTypes: ["Quick Strike", "Takedown", "Ranged Attack"],
+        defenseOptions: ["Dodge", "Block", "Counter"],
+        specialAbilities: ["Slow Motion", "Mark Targets", "Chain Takedown"]
+      },
+      environmentInteraction: {
+        interactiveElements: ["Evidence", "Witnesses", "Crime Scenes"],
+        environmentalMechanics: "Analyze and interact with crime scenes",
+        puzzleTypes: ["Logic Puzzles", "Evidence Connection", "Code Breaking"]
+      }
+    },
+    RPG: {
+      playerMovement: {
+        basicControls: ["Walk/Run", "Jump", "Dodge"],
+        specialMoves: ["Roll", "Sprint", "Sneak"],
+        navigationMechanics: "Open-world exploration with mount system"
+      },
+      coreMechanics: {
+        mainGameplay: "Character progression with rich storytelling and choices",
+        uniqueFeatures: ["Class System", "Skill Trees", "Reputation System"],
+        progression: "Level up, learn new skills, and improve equipment"
+      },
+      combatSystem: {
+        attackTypes: ["Light Attack", "Heavy Attack", "Special Skills"],
+        defenseOptions: ["Block", "Parry", "Dodge Roll"],
+        specialAbilities: ["Ultimate Ability", "Class Skills", "Combo Moves"]
+      },
+      environmentInteraction: {
+        interactiveElements: ["NPCs", "Resources", "Points of Interest"],
+        environmentalMechanics: "Rich world interaction with consequences",
+        puzzleTypes: ["Dialogue Puzzles", "Environmental Challenges", "Optional Dungeons"]
+      }
+    }
+  };
+
+  // Start with genre defaults
+  const baseDetails = genreDefaults[input.genre];
+
+  // Customize based on input
+  if (input.mainCharacter) {
+    baseDetails.coreMechanics.uniqueFeatures.push(`Unique ${input.mainCharacter} Abilities`);
+  }
+
+  return baseDetails;
+}
+
+export { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails };

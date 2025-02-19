@@ -3,15 +3,21 @@ import { Button } from "@/components/ui/button";
 import StoryGeneratorForm from "@/components/story-generator-form";
 import IdeaGeneratorForm from "@/components/idea-generator-form";
 import StoryDisplay from "@/components/story-display";
-import { useQuery } from "@tanstack/react-query";
-import { Story } from "@shared/schema";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Story, GameplayDetails } from "@shared/schema";
 import { LogOut, GamepadIcon, Sparkles, BookText } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import GameplayDetailsDisplay from "@/components/gameplay-details";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
   const [generatedIdea, setGeneratedIdea] = useState<any>(null);
+  const [gameplayDetails, setGameplayDetails] = useState<GameplayDetails | null>(null);
 
   const { data: stories } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
@@ -20,6 +26,27 @@ export default function HomePage() {
   const handleIdeaGenerated = (idea: any) => {
     setGeneratedIdea(idea);
   };
+
+  const generateGameplayMutation = useMutation({
+    mutationFn: async (concept: any) => {
+      const res = await apiRequest("POST", "/api/gameplay-details", concept);
+      return res.json();
+    },
+    onSuccess: (details: GameplayDetails) => {
+      setGameplayDetails(details);
+      toast({
+        title: "Gameplay details generated!",
+        description: "Check out the detailed mechanics for your game concept."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to generate gameplay details",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -129,17 +156,23 @@ export default function HomePage() {
                         <p className="text-sm">{generatedIdea.conceptDescription}</p>
                       </div>
                     </div>
-                    <Button 
-                      onClick={() => {
-                        setGeneratedIdea(null);
-                        const tab = document.querySelector('[data-value="story"]') as HTMLElement;
-                        if (tab) tab.click();
-                      }}
+                    <Button
+                      onClick={() => generateGameplayMutation.mutate(generatedIdea)}
                       className="w-full"
                       variant="secondary"
+                      disabled={generateGameplayMutation.isPending}
                     >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Use This Concept
+                      {generateGameplayMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Generating Gameplay Details...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Use This Concept
+                        </>
+                      )}
                     </Button>
                   </div>
                 ) : (
@@ -154,6 +187,20 @@ export default function HomePage() {
             </div>
           </TabsContent>
         </Tabs>
+        {gameplayDetails && (
+          <div className="mt-8 space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight">Gameplay Details</h2>
+              <p className="text-muted-foreground">
+                Detailed mechanics and systems for your game concept.
+              </p>
+            </div>
+            <GameplayDetailsDisplay
+              details={gameplayDetails}
+              title={generatedIdea?.gameTitle || "Game Concept"}
+            />
+          </div>
+        )}
       </main>
     </div>
   );
