@@ -53,8 +53,36 @@ async function retryWithBackoff<T>(
   }
 }
 
-export async function generateGameStory(input: StoryInput): Promise<StoryOutput> {
+// Simple rate limiter using a Map
+const requestTimes = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 5;
+
+function isRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const userRequests = requestTimes.get(userId) || [];
+
+  // Remove old requests outside the window
+  const recentRequests = userRequests.filter(time => now - time < RATE_LIMIT_WINDOW);
+  requestTimes.set(userId, recentRequests);
+
+  return recentRequests.length >= MAX_REQUESTS_PER_WINDOW;
+}
+
+function addRequest(userId: string) {
+  const userRequests = requestTimes.get(userId) || [];
+  userRequests.push(Date.now());
+  requestTimes.set(userId, userRequests);
+}
+
+export async function generateGameStory(input: StoryInput, userId: string): Promise<StoryOutput> {
   try {
+    if (isRateLimited(userId)) {
+      throw new Error('You have reached the maximum number of story generations per minute. Please wait a moment and try again.');
+    }
+
+    addRequest(userId);
+
     const response = await retryWithBackoff(async () => {
       return await openai.chat.completions.create({
         model: "gpt-4o",
@@ -98,7 +126,7 @@ export async function generateGameStory(input: StoryInput): Promise<StoryOutput>
     console.error('Error generating story:', error);
 
     if (error.status === 429) {
-      throw new Error('The AI service is currently busy. Please try again in a few minutes. We automatically retry your request a few times before showing this message.');
+      throw new Error('The AI service is temporarily at capacity. Please wait a minute before trying again. We automatically retry your request a few times before showing this message.');
     }
 
     if (error.status === 401) {
@@ -107,6 +135,11 @@ export async function generateGameStory(input: StoryInput): Promise<StoryOutput>
 
     if (error.status === 500) {
       throw new Error('OpenAI service is temporarily unavailable. Please try again later.');
+    }
+
+    // Pass through custom rate limit message
+    if (error.message.includes('reached the maximum number')) {
+      throw error;
     }
 
     throw new Error('Failed to generate story. Please try again.');

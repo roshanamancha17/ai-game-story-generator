@@ -11,7 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 
 const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
 
@@ -25,6 +25,7 @@ const formSchema = z.object({
 export default function StoryGeneratorForm() {
   const { toast } = useToast();
   const lastRequestTime = useRef<number>(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,10 +40,12 @@ export default function StoryGeneratorForm() {
   const checkCooldown = useCallback(() => {
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime.current;
+    const remaining = Math.max(0, COOLDOWN_PERIOD - timeSinceLastRequest);
 
-    if (timeSinceLastRequest < COOLDOWN_PERIOD) {
-      const remainingSeconds = Math.ceil((COOLDOWN_PERIOD - timeSinceLastRequest) / 1000);
-      throw new Error(`Please wait ${remainingSeconds} seconds before generating another story.`);
+    setCooldownRemaining(remaining);
+
+    if (remaining > 0) {
+      throw new Error(`Please wait ${Math.ceil(remaining / 1000)} seconds before generating another story.`);
     }
   }, []);
 
@@ -59,7 +62,12 @@ export default function StoryGeneratorForm() {
         title: "Story generated!",
         description: "Your new story has been created successfully."
       });
-      form.reset();
+      form.reset({
+        genre: "Fantasy",
+        gameTitle: "",
+        mainCharacter: "",
+        storyLength: "Medium"
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -69,6 +77,16 @@ export default function StoryGeneratorForm() {
       });
     }
   });
+
+  // Update cooldown timer
+  useEffect(() => {
+    if (cooldownRemaining > 0) {
+      const interval = setInterval(() => {
+        setCooldownRemaining(prev => Math.max(0, prev - 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [cooldownRemaining]);
 
   return (
     <Form {...form}>
@@ -168,13 +186,15 @@ export default function StoryGeneratorForm() {
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={generateMutation.isPending}
+          disabled={generateMutation.isPending || cooldownRemaining > 0}
         >
           {generateMutation.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Generating Story...
             </>
+          ) : cooldownRemaining > 0 ? (
+            `Wait ${Math.ceil(cooldownRemaining / 1000)}s to generate again`
           ) : (
             'Generate Story'
           )}

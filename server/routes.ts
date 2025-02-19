@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gameTitle: req.body.gameTitle,
         mainCharacter: req.body.mainCharacter,
         storyLength: req.body.storyLength
-      });
+      }, req.user.id.toString());
 
       const savedStory = await storage.createStory({
         userId: req.user.id,
