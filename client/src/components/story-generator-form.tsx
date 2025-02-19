@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { storyGenreSchema, storyLengthSchema } from "@shared/schema";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
   genre: storyGenreSchema,
@@ -55,13 +56,21 @@ export default function StoryGeneratorForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => generateMutation.mutate(data))} className="space-y-4">
+        {generateMutation.error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              {generateMutation.error.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <FormField
           control={form.control}
           name="genre"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Genre</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={generateMutation.isPending}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select genre" />
@@ -75,6 +84,7 @@ export default function StoryGeneratorForm() {
                   <SelectItem value="RPG">RPG</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -86,8 +96,13 @@ export default function StoryGeneratorForm() {
             <FormItem>
               <FormLabel>Game Title</FormLabel>
               <FormControl>
-                <Input placeholder="Enter game title" {...field} />
+                <Input 
+                  placeholder="Enter game title" 
+                  {...field} 
+                  disabled={generateMutation.isPending}
+                />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -99,8 +114,13 @@ export default function StoryGeneratorForm() {
             <FormItem>
               <FormLabel>Main Character</FormLabel>
               <FormControl>
-                <Input placeholder="Describe the main character" {...field} />
+                <Input 
+                  placeholder="Describe the main character" 
+                  {...field} 
+                  disabled={generateMutation.isPending}
+                />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -111,7 +131,7 @@ export default function StoryGeneratorForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Story Length</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={generateMutation.isPending}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select length" />
@@ -123,13 +143,24 @@ export default function StoryGeneratorForm() {
                   <SelectItem value="Long">Long</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={generateMutation.isPending}>
-          {generateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Generate Story
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={generateMutation.isPending}
+        >
+          {generateMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating Story...
+            </>
+          ) : (
+            'Generate Story'
+          )}
         </Button>
       </form>
     </Form>

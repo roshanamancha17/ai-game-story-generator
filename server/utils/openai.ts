@@ -64,8 +64,21 @@ export async function generateGameStory(input: StoryInput): Promise<StoryOutput>
     }
 
     return JSON.parse(content) as StoryOutput;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating story:', error);
-    throw new Error('Failed to generate story');
+
+    if (error.status === 429) {
+      throw new Error('API rate limit exceeded. Please try again in a few minutes.');
+    }
+
+    if (error.status === 401) {
+      throw new Error('Invalid API key. Please check your OpenAI API key configuration.');
+    }
+
+    if (error.status === 500) {
+      throw new Error('OpenAI service is temporarily unavailable. Please try again later.');
+    }
+
+    throw new Error('Failed to generate story. Please try again.');
   }
 }
