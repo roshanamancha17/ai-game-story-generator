@@ -1,12 +1,36 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Star } from "lucide-react";
+import { Check, Star, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { FREE_TIER_LIMITS, PREMIUM_TIER_LIMITS } from "@shared/schema";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+const PREMIUM_PRICE = 9.99; // Monthly subscription price in USD
 
 export default function PremiumFeaturesCard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const isPremium = user?.isPremium;
+
+  const createCheckoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/create-checkout");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating checkout session",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const features = [
     {
@@ -67,10 +91,29 @@ export default function PremiumFeaturesCard() {
             ))}
           </div>
           {!isPremium && (
-            <Button className="w-full mt-4">
-              <Star className="h-4 w-4 mr-2" />
-              Upgrade to Premium
-            </Button>
+            <div className="mt-6 space-y-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">${PREMIUM_PRICE}</div>
+                <div className="text-sm text-muted-foreground">per month</div>
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={() => createCheckoutMutation.mutate()}
+                disabled={createCheckoutMutation.isPending}
+              >
+                {createCheckoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Star className="h-4 w-4 mr-2" />
+                    Upgrade to Premium
+                  </>
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>

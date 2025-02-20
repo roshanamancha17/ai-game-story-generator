@@ -10,6 +10,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   createStory(story: InsertStory): Promise<Story>;
   getStoriesByUserId(userId: number): Promise<Story[]>;
+  updateUserPremium(userId: number, isPremium: boolean): Promise<void>;
   sessionStore: session.Store;
 }
 
@@ -42,9 +43,26 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      isPremium: false,
+      premiumUntil: null
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserPremium(userId: number, isPremium: boolean): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) {
+      const updatedUser: User = {
+        ...user,
+        isPremium,
+        premiumUntil: isPremium ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null // 30 days from now
+      };
+      this.users.set(userId, updatedUser);
+    }
   }
 
   async createStory(insertStory: InsertStory): Promise<Story> {
