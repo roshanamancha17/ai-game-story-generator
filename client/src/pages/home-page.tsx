@@ -79,8 +79,8 @@ export default function HomePage() {
   const isPremium = user?.isPremium;
 
   return (
-    <div className="min-h-screen bg-white"> {/* Changed background to white */}
-      <header className="bg-white border-b sticky top-0 z-10"> {/* Changed background to white */}
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <header className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <GamepadIcon className="h-6 w-6 text-primary" />
@@ -251,7 +251,7 @@ export default function HomePage() {
             </div>
             {!isPremium ? (
               <div className="space-y-4">
-                <div className="bg-white border-2 border-lavender-200 rounded-lg p-4">
+                <div className="bg-lavender-100 border-2 border-lavender-200 rounded-lg p-4">
                   <div className="flex items-center gap-3">
                     <Star className="h-5 w-5 text-lavender-600" />
                     <div>
