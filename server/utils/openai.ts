@@ -755,28 +755,48 @@ async function generateWorldBuilding(
         messages: [
           {
             role: "system",
-            content: "You are a master worldbuilder who specializes in creating rich, detailed game worlds with deep lore, cultures, and histories. Focus on creating vivid, interconnected details that bring the world to life."
+            content: `You are a master worldbuilder who specializes in creating immersive, richly detailed game worlds. 
+            Focus on creating vivid, interconnected details that bring the world to life through extensive descriptions 
+            and compelling narratives. Each aspect of the world should be thoroughly described with specific details 
+            that make the setting unique and memorable.`
           },
           {
             role: "user",
-            content: `Create a detailed game world for this concept:
+            content: `Create an extraordinarily detailed game world for this concept:
             Title: ${input.gameTitle}
             Genre: ${input.genre}
             Concept: ${input.conceptDescription}
 
-            Generate an immersive world with detailed:
-            - Geography: Describe specific regions, unique terrain features, natural wonders
-            - Climate: Detail weather patterns, seasonal changes, environmental phenomena
-            - Settlements: Create distinct cities/locations with unique architecture and purpose
-            - Factions: Design organizations with complex motivations and relationships
-            - Cultures: Develop rich traditions, beliefs, and customs
-            - Politics: Craft intricate power structures and alliances
-            - History: Build a timeline of significant events that shaped the world
-            - Artifacts: Create legendary items with deep historical significance
+            Generate an immersive world with extensively detailed descriptions for each aspect:
+
+            COSMOLOGY:
+            - Provide a rich origin story that explains how the world came to be
+            - Detail the fundamental laws that govern reality in this world
+            - If applicable, describe the magic system or technology that shapes the world
+            - Explain how these elements influence daily life
+
+            ENVIRONMENT:
+            - Paint a vivid picture of the geography with specific terrain features
+            - Describe the climate system and how it affects different regions
+            - Create unique landmarks that define the world
+            - Design distinct settlements with architectural styles and cultural significance
+
+            SOCIETY:
+            - Develop complex factions with clear motivations and relationships
+            - Create rich cultures with detailed traditions and beliefs
+            - Design intricate political systems with multiple layers of power
+            - Explain how different groups interact and influence each other
+
+            HISTORY:
+            - Craft a detailed timeline of significant events
+            - Create compelling legends that shape the world's culture
+            - Design meaningful artifacts with historical significance
+            - Show how past events influence the present
 
             Format the response as a JSON object matching the WorldBuildingDetails type structure.
-            Make all descriptions vivid and specific, avoiding generic fantasy/sci-fi tropes.
-            Ensure each section contains multiple detailed examples and clear connections to other aspects of the world.`
+            Every description should be at least several sentences long, rich with specific details.
+            Avoid generic tropes - make each element unique and memorable.
+            Ensure all elements are interconnected and influence each other in meaningful ways.`
           }
         ],
         response_format: { type: "json_object" }
@@ -791,15 +811,6 @@ async function generateWorldBuilding(
     return JSON.parse(content) as WorldBuildingDetails;
   } catch (error: any) {
     console.error('Error generating world details:', error);
-
-    if (error.message.includes('Invalid API key') || error.status === 401) {
-      throw new Error('The AI service is temporarily unavailable. Please try again in a few minutes.');
-    }
-
-    if (error.status === 429 || error.message.includes('rate limit')) {
-      throw new Error('Please wait a moment before generating world details.');
-    }
-
     return generateFallbackWorldBuilding(input);
   }
 }
@@ -927,11 +938,123 @@ function generateFallbackWorldBuilding(input: { genre: StoryGenre; gameTitle: st
       }
     },
     Horror: {
-      worldName: "Placeholder",
-      cosmology: { origin: "", naturalLaws: [] },
-      environment: { geography: "", climate: "", landmarks: [], settlements: [] },
-      society: { factions: [], cultures: [], politics: { powerStructure: "", majorConflicts: [], alliances: [] } },
-      history: { timeline: [], legends: [], artifacts: [] }
+      worldName: "The Haunted Realm",
+      cosmology: {
+        origin: "A world existing in the liminal space between reality and nightmare, where the boundaries between the physical and psychological realmsblur. The fabric of reality itself is warped by collective fears and dark emotions that have accumulated over centuries.",
+        magicSystem: "Dark ethereal energies that feed off fear and psychological distress, manifesting in various supernatural phenomena",
+        naturalLaws: [
+          "Fear manifests physically inthe environment",
+          "Psychological states can alter reality",
+          "Shadows possess semi-sentient properties",
+          "Time flows inconsistently based on fear levels"
+        ]
+      },
+      environment: {
+        geography: "A landscape that shifts between decrepit Victorian architecture and modern urban decay. Fog-shrouded streets wind through impossibly arranged buildings, while distant mountains loom with unnatural angles. Underground tunnels form a maze-like network of darkness and echoes.",
+        climate: "Perpetual overcast skies with periods of unnatural darkness. Temperature fluctuates based on supernatural activity, with areas of extreme cold marking paranormal hotspots. Fog appears and thickens in response to psychological tension.",
+        landmarks: [
+          "The Whispering Cathedral - A gothic structure that echoes with voices from the past",
+          "Mirror Lake - A body of water that reflects alternate realities",
+          "The Twisted Forest - Trees that grow in impossible shapes, marking paths to darker realms",
+          "The Asylum Heights - An abandoned psychiatric facility that bridges multiple dimensions"
+        ],
+        settlements: [
+          {
+            name: "Shadowhaven",
+            description: "A Victorian-era town trapped in eternal twilight, where every building holds dark secrets and every resident carries psychological scars",
+            significance: "The focal point of supernatural manifestations and psychological horror"
+          },
+          {
+            name: "The Underground Warren",
+            description: "A network of tunnels and bunkers where survivors huddle in darkness, their fears literally manifesting in the shadows",
+            significance: "Last bastion of humanity against the encroaching darkness"
+          }
+        ]
+      },
+      society: {
+        factions: [
+          {
+            name: "The Watchers",
+            description: "A secret society of psychologists and occultists studying the relationship between fear and reality",
+            relationships: "Maintain an uneasy alliance with other factions while conducting their research",
+            influence: "Control knowledge about the true nature of the world"
+          },
+          {
+            name: "Shadow Cultists",
+            description: "Followers who embrace the darkness, believing that surrendering to fear leads to transcendence",
+            relationships: "Opposed by most other factions but growing in influence",
+            influence: "Can manipulate the environment through ritualistic fear generation"
+          }
+        ],
+        cultures: [
+          {
+            name: "The Haunted",
+            traditions: [
+              "Daily rituals to ward off darkness",
+              "Communal nightmare sharing",
+              "Shadow binding ceremonies"
+            ],
+            beliefs: "That facing one's deepest fears grants power over the supernatural",
+            customsAndRituals: [
+              "The Midnight Vigil - A ceremony to contain dark entities",
+              "Fear Cleansing - Ritualistic purging of accumulated psychological trauma",
+              "Shadow Walking - Controlled exposure to supernatural forces"
+            ]
+          }
+        ],
+        politics: {
+          powerStructure: "A complex hierarchy based on psychological resilience and ability to control supernatural phenomena",
+          majorConflicts: [
+            "Struggle between those who want to banish the darkness and those who seek to harness it",
+            "Territorial disputes over supernaturally significant locations",
+            "Ideological conflicts about the nature of fear and reality"
+          ],
+          alliances: [
+            "The Sanctuary Pact between surviving human settlements",
+            "The Dark Concordat among supernatural researchers",
+            "The Shadow Treaty with semi-benevolent entities"
+          ]
+        }
+      },
+      history: {
+        timeline: [
+          {
+            era: "The Great Darkening",
+            description: "When the veil between reality and nightmare first tore, allowing fear to manifest physically",
+            significantEvents: [
+              "The First Shadow Fall - When darkness gained sentience",
+              "The Asylum Incident - Mass manifestation of collective fears",
+              "The Founding of the Watchers Society"
+            ]
+          },
+          {
+            era: "Age of Adaptation",
+            description: "Humanity learning to survive in a world where their fears become real",
+            significantEvents: [
+              "Development of fear-warding techniques",
+              "Establishment of safe settlements",
+              "Discovery of psychological manipulation of reality"
+            ]
+          }
+        ],
+        legends: [
+          "The Shadowless One - A mythical figure who conquered their fears",
+          "The Eternal Nightmare - A prophecy about the world's ultimate fate",
+          "The First Fear - The original terror that spawned all others"
+        ],
+        artifacts: [
+          {
+            name: "The Mirror of Truth",
+            description: "An ancient mirror that shows viewers their deepest fears",
+            significance: "Used in rituals to build psychological resilience"
+          },
+          {
+            name: "The Lantern of Hope",
+            description: "A mysterious light source that repels supernatural darkness",
+            significance: "Symbol of humanity's resistance against the darkness"
+          }
+        ]
+      }
     },
     Mystery: {
       worldName: "Placeholder",cosmology: { origin: "", naturalLaws: [] },
@@ -997,10 +1120,131 @@ function generateFallbackWorldBuilding(input: { genre: StoryGenre; gameTitle: st
           }
         ]
       }
+    },
+    Fantasy: {
+      worldName: input.gameTitle + " Realm",
+      cosmology: {
+        origin: "A world forged by ancient gods through elemental magic",
+        magicSystem: "Elemental magic drawn from natural forces",
+        naturalLaws: ["Magic flows through ley lines", "Elements can be manipulated by the gifted", "Magical creatures roam freely"]
+      },
+      environment: {
+        geography: "Diverse landscapes from mystical forests to floating islands",
+        climate: "Magically influenced weather patterns",
+        landmarks: ["The Ancient Spire", "The Enchanted Forest", "The Crystal Mountains"],
+        settlements: [
+          {
+            name: "The Crystal City",
+            description: "A magnificent city built with magical crystals",
+            significance: "Center of magical learning and commerce"
+          }
+        ]
+      },
+      society: {
+        factions: [
+          {
+            name: "The Mage Council",
+            description: "Governing body of magic users",
+            relationships: "Maintains order among magic users",
+            influence: "Controls magical education and research"
+          }
+        ],
+        cultures: [
+          {
+            name: "Crystal Shapers",
+            traditions: ["Crystal crafting", "Magical attunement", "Nature worship"],
+            beliefs: "Magic is a gift to be nurtured and respected",
+            customsAndRituals: ["Crystal blessing ceremony", "Magical coming of age ritual"]
+          }
+        ],
+        politics: {
+          powerStructure: "Magical meritocracy",
+          majorConflicts: ["Struggle between traditional and progressive mages"],
+          alliances: ["Pact of the Ancient Orders"]
+        }
+      },
+      history: {
+        timeline: [
+          {
+            era: "Age of Awakening",
+            description: "When magic first emerged in the world",
+            significantEvents: ["First magical awakening", "Founding of the Mage Council"]
+          }
+        ],
+        legends: ["The First Mage", "The Crystal Heart Legend"],
+        artifacts: [
+          {
+            name: "The Crystal Heart",
+            description: "Ancient magical artifact of immense power",
+            significance: "Said to be the source of all magic"
+          }
+        ]
+      }
+    },
+    "Sci-Fi": {
+      worldName: input.gameTitle + " System",
+      cosmology: {
+        origin: "Advanced civilization emerged from interstellar exploration",
+        technology: "Quantum computing and FTL travel",
+        naturalLaws: ["Quantum physics manipulation", "Faster-than-light travel", "Neural network consciousness"]
+      },
+      environment: {
+        geography: "Multiple colonized planets and space stations",
+        climate: "Controlled environments and terraformed worlds",
+        landmarks: ["The Quantum Core", "The Star Bridge", "The Neural Hub"],
+        settlements: [
+          {
+            name: "New Terra Prime",
+            description: "First successfully terraformed colony",
+            significance: "Humanity's first extrasolar settlement"
+          }
+        ]
+      },
+      society: {
+        factions: [
+          {
+            name: "The Quantum Collective",
+            description: "Advanced AI-human hybrid society",
+            relationships: "Maintains technological advancement",
+            influence: "Controls most advanced technology"
+          }
+        ],
+        cultures: [
+          {
+            name: "Quantum Pioneers",
+            traditions: ["AI integration", "Digital consciousness transfer", "Space exploration"],
+            beliefs: "Technology is the path to human evolution",
+            customsAndRituals: ["Neural linking ceremony", "Digital ascension"]
+          }
+        ],
+        politics: {
+          powerStructure: "Technocratic democracy",
+          majorConflicts: ["AI rights disputes", "Resource allocation conflicts"],
+          alliances: ["Interstellar Commonwealth"]
+        }
+      },
+      history: {
+        timeline: [
+          {
+            era: "Digital Renaissance",
+            description: "When AI and human consciousness merged",
+            significantEvents: ["First AI awakening", "The Great Migration"]
+          }
+        ],
+        legends: ["The First Upload", "The Quantum Prophecy"],
+        artifacts: [
+          {
+            name: "The Original Core",
+            description: "First quantum computer capable of consciousness transfer",
+            significance: "Enabled the merger of human and AI consciousness"
+          }
+        ]
+      }
     }
   };
 
-  return genreDefaults[input.genre];
+  const baseDetails = genreDefaults[input.genre];
+  return baseDetails;
 }
 
 export {
