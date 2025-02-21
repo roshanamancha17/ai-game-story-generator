@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCallback, useRef, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import GenreRecommendation from "./genre-recommendation";
 
 const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
 
@@ -92,10 +91,6 @@ export default function StoryGeneratorForm() {
     }
   }, [cooldownRemaining]);
 
-  const handleGenreSelect = (genre: string) => {
-    form.setValue("genre", genre);
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => generateMutation.mutate(data))} className="space-y-4">
@@ -108,11 +103,11 @@ export default function StoryGeneratorForm() {
         )}
 
         {!isPremium && (
-          <div className="bg-lavender-100 border-2 border-lavender-200 rounded-lg p-4 mb-6"> {/* Changed background and border colors */}
+          <div className="bg-lavender-100 border-2 border-lavender-200 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-3">
-              <Star className="h-5 w-5 text-lavender-600" /> {/* Changed star color */}
+              <Star className="h-5 w-5 text-lavender-600" />
               <div>
-                <h3 className="font-semibold text-lavender-600 text-sm">Premium Features Available</h3> {/* Changed heading color */}
+                <h3 className="font-semibold text-lavender-600 text-sm">Premium Features Available</h3>
                 <p className="text-xs text-muted-foreground mt-1">
                   Upgrade to unlock longer stories, richer gameplay mechanics, and more intricate world-building!
                 </p>
@@ -122,7 +117,30 @@ export default function StoryGeneratorForm() {
         )}
 
         <div className="space-y-6">
-          <GenreRecommendation onGenreSelect={handleGenreSelect} />
+          <FormField
+            control={form.control}
+            name="genre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Genre</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={generateMutation.isPending}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select genre" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Fantasy">Fantasy</SelectItem>
+                    <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
+                    <SelectItem value="Horror">Horror</SelectItem>
+                    <SelectItem value="Mystery">Mystery</SelectItem>
+                    <SelectItem value="RPG">RPG</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
