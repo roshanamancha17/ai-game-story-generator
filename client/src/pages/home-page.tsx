@@ -14,6 +14,7 @@ import { Loader2 } from "lucide-react";
 import GameplayDetailsDisplay from "@/components/gameplay-details";
 import WorldBuildingDisplay from "@/components/world-building-display";
 import { Link } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
@@ -76,6 +77,27 @@ export default function HomePage() {
     }
   });
 
+  const enablePremiumMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/enable-premium");
+      return res.json();
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Premium Enabled",
+        description: "You now have access to all premium features!"
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to enable premium",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const isPremium = user?.isPremium;
 
   return (
@@ -95,6 +117,19 @@ export default function HomePage() {
                 Premium
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => enablePremiumMutation.mutate()}
+              disabled={isPremium || enablePremiumMutation.isPending}
+            >
+              {enablePremiumMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Crown className="h-4 w-4 mr-2" />
+              )}
+              {isPremium ? "Premium Active" : "Enable Premium"}
+            </Button>
             <span className="text-sm text-muted-foreground">Welcome, {user?.username}</span>
             <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
               <LogOut className="h-4 w-4 mr-2" />

@@ -242,6 +242,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add this new endpoint near the other premium-related endpoints
+  app.post("/api/enable-premium", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      await storage.updateUserPremium(req.user.id, true);
+
+      // Get updated user data
+      const user = await storage.getUser(req.user.id);
+      res.json(user);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
