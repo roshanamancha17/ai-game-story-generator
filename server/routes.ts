@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails, generateWorldBuilding } from "./utils/openai";
 import { z } from "zod";
 import Stripe from "stripe";
+import * as openai from 'openai'; //Import openai
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16"
@@ -18,8 +19,52 @@ const improvePromptSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
 });
 
+const genreRecommendationSchema = z.object({
+  description: z.string().min(1, "Description is required").max(1000, "Description too long")
+});
+
+const storyGenreSchema = z.string().min(1, "Genre is required").max(50, "Genre too long"); //Added StoryGenreSchema
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  app.post("/api/recommend-genre", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const { description } = genreRecommendationSchema.parse(req.body);
+
+      // Call OpenAI to analyze the story and recommend a genre
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a game story genre analysis expert. Analyze the given story description and recommend the most suitable genre from the available options. Provide your response in JSON format with the following structure: { recommendedGenre: string, confidence: number, explanation: string, alternativeGenres: string[] }. The genre must be one of: Fantasy, Sci-Fi, Horror, Mystery, RPG. Confidence should be between 0 and 1."
+          },
+          {
+            role: "user",
+            content: description
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const recommendation = JSON.parse(completion.choices[0].message.content);
+
+      // Validate the recommended genre against our schema
+      if (!storyGenreSchema.safeParse(recommendation.recommendedGenre).success) {
+        throw new Error("Invalid genre recommendation received");
+      }
+
+      res.json(recommendation);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
 
   app.post("/api/create-checkout", async (req, res) => {
     if (!req.isAuthenticated()) {

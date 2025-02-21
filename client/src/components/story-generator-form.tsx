@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCallback, useRef, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import GenreRecommendation from "./genre-recommendation";
 
 const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
 
@@ -91,6 +92,10 @@ export default function StoryGeneratorForm() {
     }
   }, [cooldownRemaining]);
 
+  const handleGenreSelect = (genre: string) => {
+    form.setValue("genre", genre);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => generateMutation.mutate(data))} className="space-y-4">
@@ -116,129 +121,109 @@ export default function StoryGeneratorForm() {
           </div>
         )}
 
-        <FormField
-          control={form.control}
-          name="genre"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Genre</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={generateMutation.isPending}>
+        <div className="space-y-6">
+          <GenreRecommendation onGenreSelect={handleGenreSelect} />
+
+
+          <FormField
+            control={form.control}
+            name="gameTitle"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Game Title</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select genre" />
-                  </SelectTrigger>
+                  <Input
+                    placeholder="Enter game title"
+                    {...field}
+                    disabled={generateMutation.isPending}
+                  />
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="Fantasy">Fantasy</SelectItem>
-                  <SelectItem value="Sci-Fi">Sci-Fi</SelectItem>
-                  <SelectItem value="Horror">Horror</SelectItem>
-                  <SelectItem value="Mystery">Mystery</SelectItem>
-                  <SelectItem value="RPG">RPG</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="gameTitle"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Game Title</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Enter game title" 
-                  {...field} 
-                  disabled={generateMutation.isPending}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="mainCharacter"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Main Character</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Describe the main character" 
-                  {...field} 
-                  disabled={generateMutation.isPending}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="storyLength"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center gap-2">
-                Story Length
-                {!isPremium && (
-                  <span className="text-xs text-muted-foreground">
-                    (Premium unlocks longer stories)
-                  </span>
-                )}
-              </FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value} 
-                disabled={generateMutation.isPending}
-              >
+          <FormField
+            control={form.control}
+            name="mainCharacter"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Main Character</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select length" />
-                  </SelectTrigger>
+                  <Input
+                    placeholder="Describe the main character"
+                    {...field}
+                    disabled={generateMutation.isPending}
+                  />
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="Short">Short</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Long" disabled={!isPremium}>
-                    Long (Premium)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={generateMutation.isPending || cooldownRemaining > 0}
-        >
-          {generateMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating Story...
-            </>
-          ) : cooldownRemaining > 0 ? (
-            `Wait ${Math.ceil(cooldownRemaining / 1000)}s to generate again`
+          <FormField
+            control={form.control}
+            name="storyLength"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                  Story Length
+                  {!isPremium && (
+                    <span className="text-xs text-muted-foreground">
+                      (Premium unlocks longer stories)
+                    </span>
+                  )}
+                </FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={generateMutation.isPending}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select length" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Short">Short</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Long" disabled={!isPremium}>
+                      Long (Premium)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={generateMutation.isPending || cooldownRemaining > 0}
+          >
+            {generateMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Story...
+              </>
+            ) : cooldownRemaining > 0 ? (
+              `Wait ${Math.ceil(cooldownRemaining / 1000)}s to generate again`
+            ) : (
+              'Generate Story'
+            )}
+          </Button>
+
+          {isPremium ? (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Premium features active: Advanced gameplay mechanics and world-building included
+            </p>
           ) : (
-            'Generate Story'
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Free tier: Basic story generation only
+            </p>
           )}
-        </Button>
-
-        {isPremium ? (
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            Premium features active: Advanced gameplay mechanics and world-building included
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            Free tier: Basic story generation only
-          </p>
-        )}
+        </div>
       </form>
     </Form>
   );
