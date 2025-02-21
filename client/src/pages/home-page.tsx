@@ -15,6 +15,7 @@ import GameplayDetailsDisplay from "@/components/gameplay-details";
 import WorldBuildingDisplay from "@/components/world-building-display";
 import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
+import Navbar from "@/components/navbar";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
@@ -102,49 +103,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Responsive Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <GamepadIcon className="h-6 w-6 text-primary" />
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                Game Story Generator
-              </h1>
-            </div>
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4">
-              <Link href="/premium">
-                <Button variant="ghost" size="sm" className="text-primary">
-                  <Crown className="h-4 w-4 mr-2" />
-                  Premium
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => enablePremiumMutation.mutate()}
-                disabled={isPremium || enablePremiumMutation.isPending}
-              >
-                {enablePremiumMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Crown className="h-4 w-4 mr-2" />
-                )}
-                {isPremium ? "Premium Active" : "Enable Premium"}
-              </Button>
-              <span className="text-sm text-muted-foreground">Welcome, {user?.username}</span>
-              <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <Navbar />
       <main className="container mx-auto px-4 py-4 sm:py-8">
         <Tabs defaultValue="story" className="space-y-6 sm:space-y-8">
-          {/* Responsive Tabs List */}
           <TabsList className="grid w-full sm:w-[400px] grid-cols-2 mx-auto bg-white shadow-sm">
             <TabsTrigger value="story" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BookText className="h-4 w-4 mr-2" />
@@ -158,7 +119,6 @@ export default function HomePage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Story Tab Content */}
           <TabsContent value="story" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1fr,1fr]">
               <div className="space-y-4 sm:space-y-6">
@@ -195,7 +155,6 @@ export default function HomePage() {
             </div>
           </TabsContent>
 
-          {/* Idea Tab Content */}
           <TabsContent value="idea" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1fr,1fr]">
               <div className="space-y-4 sm:space-y-6">
@@ -267,7 +226,6 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
 
-        {/* Gameplay Details Section */}
         {gameplayDetails && (
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="space-y-2">
@@ -285,7 +243,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* World Building Section */}
         {worldDetails && (
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="space-y-2">

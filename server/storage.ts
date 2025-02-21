@@ -1,8 +1,12 @@
 import session from "express-session";
-import createMemoryStore from "memorystore";
-import { InsertUser, User, Story, InsertStory } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+import { users, stories, gamePlans } from "@shared/schema";
+import type { InsertUser, User, Story, InsertStory, GamePlan, InsertGamePlan } from "@shared/schema";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -11,76 +15,79 @@ export interface IStorage {
   createStory(story: InsertStory): Promise<Story>;
   getStoriesByUserId(userId: number): Promise<Story[]>;
   updateUserPremium(userId: number, isPremium: boolean): Promise<void>;
+  createGamePlan(plan: InsertGamePlan): Promise<GamePlan>;
+  getGamePlansByUserId(userId: number): Promise<GamePlan[]>;
+  updateGamePlan(id: number, plan: Partial<GamePlan>): Promise<void>;
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private stories: Map<number, Story>;
-  private currentUserId: number;
-  private currentStoryId: number;
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.stories = new Map();
-    this.currentUserId = 1;
-    this.currentStoryId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      ...insertUser, 
-      id, 
-      isPremium: false,
-      premiumUntil: null
-    };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUserPremium(userId: number, isPremium: boolean): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const updatedUser: User = {
-        ...user,
+    await db
+      .update(users)
+      .set({
         isPremium,
-        premiumUntil: isPremium ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null // 30 days from now
-      };
-      this.users.set(userId, updatedUser);
-    }
+        premiumUntil: isPremium ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null // 30 days
+      })
+      .where(eq(users.id, userId));
   }
 
   async createStory(insertStory: InsertStory): Promise<Story> {
-    const id = this.currentStoryId++;
-    const story: Story = {
-      ...insertStory,
-      id,
-      createdAt: new Date()
-    };
-    this.stories.set(id, story);
+    const [story] = await db.insert(stories).values(insertStory).returning();
     return story;
   }
 
   async getStoriesByUserId(userId: number): Promise<Story[]> {
-    return Array.from(this.stories.values())
-      .filter(story => story.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return db
+      .select()
+      .from(stories)
+      .where(eq(stories.userId, userId))
+      .orderBy(stories.createdAt);
+  }
+
+  async createGamePlan(plan: InsertGamePlan): Promise<GamePlan> {
+    const [gamePlan] = await db.insert(gamePlans).values(plan).returning();
+    return gamePlan;
+  }
+
+  async getGamePlansByUserId(userId: number): Promise<GamePlan[]> {
+    return db
+      .select()
+      .from(gamePlans)
+      .where(eq(gamePlans.userId, userId))
+      .orderBy(gamePlans.createdAt);
+  }
+
+  async updateGamePlan(id: number, plan: Partial<GamePlan>): Promise<void> {
+    await db
+      .update(gamePlans)
+      .set(plan)
+      .where(eq(gamePlans.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

@@ -21,6 +21,18 @@ export const stories = pgTable("stories", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+export const gamePlans = pgTable("game_plans", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  genre: text("genre").notNull(),
+  gameTitle: text("game_title").notNull(),
+  mainCharacter: text("main_character").notNull(),
+  conceptDescription: text("concept_description").notNull(),
+  gameplayDetails: jsonb("gameplay_details"),
+  worldBuildingDetails: jsonb("world_building_details"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -35,10 +47,22 @@ export const insertStorySchema = createInsertSchema(stories).pick({
   content: true
 });
 
+export const insertGamePlanSchema = createInsertSchema(gamePlans).pick({
+  userId: true,
+  genre: true,
+  gameTitle: true,
+  mainCharacter: true,
+  conceptDescription: true,
+  gameplayDetails: true,
+  worldBuildingDetails: true
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
+export type InsertGamePlan = z.infer<typeof insertGamePlanSchema>;
+export type GamePlan = typeof gamePlans.$inferSelect;
 
 export const storyGenreSchema = z.enum([
   "Fantasy",
