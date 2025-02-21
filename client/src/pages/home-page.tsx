@@ -82,12 +82,12 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <GamepadIcon className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
               Game Story Generator
             </h1>
-          </Link>
+          </div>
           <div className="flex items-center gap-4">
             <Link href="/premium">
               <Button variant="ghost" size="sm" className="text-primary">
@@ -192,45 +192,24 @@ export default function HomePage() {
                         <p className="text-sm">{generatedIdea.conceptDescription}</p>
                       </div>
                     </div>
-                    <div className="flex gap-4">
-                      <Button
-                        onClick={() => {
-                          const saveIdeaMutation = useMutation({
-                            mutationFn: async () => {
-                              const res = await apiRequest("POST", "/api/game-ideas", generatedIdea);
-                              return res.json();
-                            },
-                            onSuccess: () => {
-                              toast({
-                                title: "Idea saved!",
-                                description: "Your game idea has been saved successfully."
-                              });
-                              // Clear the generated idea after saving
-                              setGeneratedIdea(null);
-                            },
-                            onError: (error: Error) => {
-                              toast({
-                                title: "Failed to save idea",
-                                description: error.message,
-                                variant: "destructive"
-                              });
-                            }
-                          });
-                          saveIdeaMutation.mutate();
-                        }}
-                        className="w-full"
-                        variant="secondary"
-                      >
-                        Save This Idea
-                      </Button>
-                      <Button
-                        onClick={() => setGeneratedIdea(null)}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        Don't Save
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={() => generateGameplayMutation.mutate(generatedIdea)}
+                      className="w-full"
+                      variant="secondary"
+                      disabled={generateGameplayMutation.isPending}
+                    >
+                      {generateGameplayMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Generating Gameplay Details...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Use This Concept
+                        </>
+                      )}
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center p-8 rounded-lg bg-white shadow-sm border">

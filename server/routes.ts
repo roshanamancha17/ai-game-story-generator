@@ -152,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { description } = improvePromptSchema.parse(req.body);
 
       const improved = await generateImprovedPrompt(
-        { description },
+        { description }, 
         req.user.id.toString(),
         req.user.isPremium
       );
@@ -213,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const gameplayDetails = await generateGameplayDetails(
-        req.body,
+        req.body, 
         req.user.id.toString(),
         req.user.isPremium
       );
@@ -236,39 +236,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.isPremium
       );
       res.json(worldDetails);
-    } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ error: errorMessage });
-    }
-  });
-
-  // Add new endpoint for saving game ideas
-  app.post("/api/game-ideas", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
-
-    try {
-      const savedIdea = await storage.createGameIdea({
-        userId: req.user.id,
-        ...req.body
-      });
-
-      res.json(savedIdea);
-    } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ error: errorMessage });
-    }
-  });
-
-  app.get("/api/game-ideas", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
-
-    try {
-      const ideas = await storage.getGameIdeasByUserId(req.user.id);
-      res.json(ideas);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       res.status(500).json({ error: errorMessage });
