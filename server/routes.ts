@@ -235,6 +235,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.id.toString(),
         req.user.isPremium
       );
+
+      // If not premium, return limited world details
+      if (!req.user.isPremium) {
+        const limitedDetails = {
+          worldName: worldDetails.worldName,
+          environment: {
+            geography: "A brief overview of the world's geography (Upgrade to premium for detailed descriptions)",
+            climate: "Basic climate information (Upgrade to premium for detailed climate systems)",
+            landmarks: [],
+            settlements: []
+          },
+          cosmology: {
+            origin: "A basic overview of the world (Upgrade to premium for complete world lore)",
+            magicSystem: null,
+            technology: null,
+            naturalLaws: []
+          },
+          society: {
+            factions: [],
+            cultures: [],
+            politics: {
+              powerStructure: "",
+              majorConflicts: [],
+              alliances: []
+            }
+          },
+          history: {
+            timeline: [],
+            legends: [],
+            artifacts: []
+          }
+        };
+        return res.json(limitedDetails);
+      }
+
       res.json(worldDetails);
     } catch (error: any) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

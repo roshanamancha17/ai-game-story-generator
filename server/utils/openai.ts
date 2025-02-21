@@ -755,22 +755,28 @@ async function generateWorldBuilding(
         messages: [
           {
             role: "system",
-            content: "You are a master worldbuilder who specializes in creating rich, detailed game worlds with deep lore, cultures, and histories."
+            content: "You are a master worldbuilder who specializes in creating rich, detailed game worlds with deep lore, cultures, and histories. Focus on creating vivid, interconnected details that bring the world to life."
           },
           {
             role: "user",
-            content: `Create a detailed world for this game concept:
+            content: `Create a detailed game world for this concept:
             Title: ${input.gameTitle}
             Genre: ${input.genre}
             Concept: ${input.conceptDescription}
 
-            Generate a rich world with its own history, cultures, and systems. Include details about:
-            - The world's cosmology and natural laws
-            - Environment and geography
-            - Societies, factions, and cultures
-            - History, legends, and artifacts
+            Generate an immersive world with detailed:
+            - Geography: Describe specific regions, unique terrain features, natural wonders
+            - Climate: Detail weather patterns, seasonal changes, environmental phenomena
+            - Settlements: Create distinct cities/locations with unique architecture and purpose
+            - Factions: Design organizations with complex motivations and relationships
+            - Cultures: Develop rich traditions, beliefs, and customs
+            - Politics: Craft intricate power structures and alliances
+            - History: Build a timeline of significant events that shaped the world
+            - Artifacts: Create legendary items with deep historical significance
 
-            Format the response as a JSON object matching the WorldBuildingDetails type structure.`
+            Format the response as a JSON object matching the WorldBuildingDetails type structure.
+            Make all descriptions vivid and specific, avoiding generic fantasy/sci-fi tropes.
+            Ensure each section contains multiple detailed examples and clear connections to other aspects of the world.`
           }
         ],
         response_format: { type: "json_object" }
@@ -928,8 +934,7 @@ function generateFallbackWorldBuilding(input: { genre: StoryGenre; gameTitle: st
       history: { timeline: [], legends: [], artifacts: [] }
     },
     Mystery: {
-      worldName: "Placeholder",
-      cosmology: { origin: "", naturalLaws: [] },
+      worldName: "Placeholder",cosmology: { origin: "", naturalLaws: [] },
       environment: { geography: "", climate: "", landmarks: [], settlements: [] },
       society: { factions: [], cultures: [], politics: { powerStructure: "", majorConflicts: [], alliances: [] } },
       history: { timeline: [], legends: [], artifacts: [] }
