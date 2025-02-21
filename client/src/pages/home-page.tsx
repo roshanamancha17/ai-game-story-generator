@@ -102,74 +102,81 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      {/* Responsive Header */}
       <header className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <GamepadIcon className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Game Story Generator
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/premium">
-              <Button variant="ghost" size="sm" className="text-primary">
-                <Crown className="h-4 w-4 mr-2" />
-                Premium
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <GamepadIcon className="h-6 w-6 text-primary" />
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                Game Story Generator
+              </h1>
+            </div>
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4">
+              <Link href="/premium">
+                <Button variant="ghost" size="sm" className="text-primary">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Premium
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => enablePremiumMutation.mutate()}
+                disabled={isPremium || enablePremiumMutation.isPending}
+              >
+                {enablePremiumMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Crown className="h-4 w-4 mr-2" />
+                )}
+                {isPremium ? "Premium Active" : "Enable Premium"}
               </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => enablePremiumMutation.mutate()}
-              disabled={isPremium || enablePremiumMutation.isPending}
-            >
-              {enablePremiumMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Crown className="h-4 w-4 mr-2" />
-              )}
-              {isPremium ? "Premium Active" : "Enable Premium"}
-            </Button>
-            <span className="text-sm text-muted-foreground">Welcome, {user?.username}</span>
-            <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+              <span className="text-sm text-muted-foreground">Welcome, {user?.username}</span>
+              <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="story" className="space-y-8">
-          <TabsList className="grid w-[400px] grid-cols-2 mx-auto bg-white shadow-sm">
+      <main className="container mx-auto px-4 py-4 sm:py-8">
+        <Tabs defaultValue="story" className="space-y-6 sm:space-y-8">
+          {/* Responsive Tabs List */}
+          <TabsList className="grid w-full sm:w-[400px] grid-cols-2 mx-auto bg-white shadow-sm">
             <TabsTrigger value="story" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BookText className="h-4 w-4 mr-2" />
-              Generate Story
+              <span className="hidden sm:inline">Generate Story</span>
+              <span className="sm:hidden">Story</span>
             </TabsTrigger>
             <TabsTrigger value="idea" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Sparkles className="h-4 w-4 mr-2" />
-              Generate from Text
+              <span className="hidden sm:inline">Generate from Text</span>
+              <span className="sm:hidden">Text</span>
             </TabsTrigger>
           </TabsList>
 
+          {/* Story Tab Content */}
           <TabsContent value="story" className="space-y-6">
-            <div className="grid gap-8 lg:grid-cols-[1fr,1fr]">
-              <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr,1fr]">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold tracking-tight">Generate New Story</h2>
-                  <p className="text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Generate New Story</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Create a unique game story by filling out the form below.
                   </p>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
                   <StoryGeneratorForm />
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold tracking-tight">Your Stories</h2>
-                  <p className="text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Your Stories</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Browse through your previously generated game stories.
                   </p>
                 </div>
@@ -178,9 +185,9 @@ export default function HomePage() {
                     <StoryDisplay key={story.id} story={story} />
                   ))}
                   {stories?.length === 0 && (
-                    <div className="text-center p-8 rounded-lg bg-white shadow-sm border">
-                      <BookText className="h-12 w-12 mx-auto mb-4 text-primary/20" />
-                      <p className="text-muted-foreground">No stories generated yet.</p>
+                    <div className="text-center p-6 sm:p-8 rounded-lg bg-white shadow-sm border">
+                      <BookText className="h-8 sm:h-12 w-8 sm:w-12 mx-auto mb-4 text-primary/20" />
+                      <p className="text-sm sm:text-base text-muted-foreground">No stories generated yet.</p>
                     </div>
                   )}
                 </div>
@@ -188,42 +195,43 @@ export default function HomePage() {
             </div>
           </TabsContent>
 
+          {/* Idea Tab Content */}
           <TabsContent value="idea" className="space-y-6">
-            <div className="grid gap-8 lg:grid-cols-[1fr,1fr]">
-              <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr,1fr]">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold tracking-tight">Generate from Description</h2>
-                  <p className="text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Generate from Description</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Describe your game idea and we'll help structure it into a proper game concept.
                   </p>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
                   <IdeaGeneratorForm onIdeaGenerated={handleIdeaGenerated} />
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold tracking-tight">Generated Concept</h2>
-                  <p className="text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Generated Concept</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Your generated game concept will appear here.
                   </p>
                 </div>
                 {generatedIdea ? (
-                  <div className="space-y-6 p-6 rounded-lg bg-white shadow-sm border">
+                  <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 rounded-lg bg-white shadow-sm border">
                     <div className="space-y-2">
-                      <h3 className="text-xl font-semibold">{generatedIdea.gameTitle}</h3>
+                      <h3 className="text-lg sm:text-xl font-semibold">{generatedIdea.gameTitle}</h3>
                       <div className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-semibold">
                         {generatedIdea.genre}
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <h4 className="font-medium text-sm text-muted-foreground">Main Character</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground">Main Character</h4>
                         <p className="text-sm">{generatedIdea.mainCharacter}</p>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="font-medium text-sm text-muted-foreground">Concept</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground">Concept</h4>
                         <p className="text-sm">{generatedIdea.conceptDescription}</p>
                       </div>
                     </div>
@@ -236,7 +244,7 @@ export default function HomePage() {
                       {generateGameplayMutation.isPending ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generating Gameplay Details...
+                          Generating...
                         </>
                       ) : (
                         <>
@@ -247,9 +255,9 @@ export default function HomePage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-center p-8 rounded-lg bg-white shadow-sm border">
-                    <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary/20" />
-                    <p className="text-muted-foreground">
+                  <div className="text-center p-6 sm:p-8 rounded-lg bg-white shadow-sm border">
+                    <Sparkles className="h-8 sm:h-12 w-8 sm:w-12 mx-auto mb-4 text-primary/20" />
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       Enter a description to generate a game concept.
                     </p>
                   </div>
@@ -258,11 +266,13 @@ export default function HomePage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Gameplay Details Section */}
         {gameplayDetails && (
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold tracking-tight">Gameplay Details</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Gameplay Details</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {isPremium
                   ? "Detailed mechanics and systems for your game concept."
                   : "Basic gameplay mechanics for your game concept. Upgrade to Premium for more details!"}
@@ -274,11 +284,13 @@ export default function HomePage() {
             />
           </div>
         )}
+
+        {/* World Building Section */}
         {worldDetails && (
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold tracking-tight">World Building</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">World Building</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {isPremium
                   ? "Explore the rich lore and detailed world of your game concept."
                   : "Basic world information. Upgrade to Premium for full world-building features!"}
@@ -287,8 +299,8 @@ export default function HomePage() {
             {!isPremium ? (
               <div className="space-y-4">
                 <div className="bg-lavender-100 border-2 border-lavender-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Star className="h-5 w-5 text-lavender-600" />
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <Star className="h-5 w-5 text-lavender-600 shrink-0" />
                     <div>
                       <h3 className="font-semibold text-lavender-600 text-sm">Premium Features Available</h3>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -303,7 +315,7 @@ export default function HomePage() {
                     <li>Advanced political systems and faction relationships</li>
                   </ul>
                 </div>
-                <div className="p-4 rounded-lg bg-white shadow-sm border">
+                <div className="p-4 sm:p-6 rounded-lg bg-white shadow-sm border">
                   <h3 className="font-semibold mb-4">{worldDetails.worldName}</h3>
                   <div className="space-y-4">
                     <div>

@@ -11,12 +11,16 @@ import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={HomePage} />
-      <ProtectedRoute path="/premium" component={PremiumPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto container px-4 sm:px-6 lg:px-8">
+        <Switch>
+          <Route path="/auth" component={AuthPage} />
+          <ProtectedRoute path="/" component={HomePage} />
+          <ProtectedRoute path="/premium" component={PremiumPage} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </div>
   );
 }
 

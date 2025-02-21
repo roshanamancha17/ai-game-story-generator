@@ -8,7 +8,6 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCallback, useRef, useState, useEffect } from "react";
 
 const COOLDOWN_PERIOD = 10000; // 10 seconds cooldown between requests
@@ -146,8 +145,8 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
         )}
 
         <div className="space-y-2">
-          <FormLabel className="text-sm text-muted-foreground">Sample Prompts</FormLabel>
-          <div className="flex flex-wrap gap-2">
+          <FormLabel className="text-xs sm:text-sm text-muted-foreground">Sample Prompts</FormLabel>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {samplePrompts.map((prompt, index) => (
               <Button
                 key={index}
@@ -155,7 +154,7 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
                 variant="outline"
                 size="sm"
                 onClick={() => form.setValue("description", prompt.description)}
-                className="text-xs"
+                className="text-[10px] sm:text-xs"
               >
                 {prompt.title}
               </Button>
@@ -172,7 +171,7 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
               <FormControl>
                 <Textarea 
                   placeholder="Describe your game concept in a few sentences..." 
-                  className="h-32 resize-none"
+                  className="h-24 sm:h-32 resize-none text-sm"
                   {...field} 
                   disabled={generateMutation.isPending || isImproving}
                 />
@@ -182,37 +181,37 @@ export default function IdeaGeneratorForm({ onIdeaGenerated }: IdeaGeneratorForm
           )}
         />
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={handleImprovePrompt}
             disabled={generateMutation.isPending || isImproving || cooldownRemaining > 0}
-            className="flex-1"
+            className="flex-1 text-xs sm:text-sm"
           >
             {isImproving ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Improving...
               </>
             ) : cooldownRemaining > 0 ? (
               `Wait ${Math.ceil(cooldownRemaining / 1000)}s`
             ) : (
               <>
-                <Wand2 className="mr-2 h-4 w-4" />
+                <Wand2 className="h-4 w-4 mr-2" />
                 Improve Prompt
               </>
             )}
           </Button>
           <Button 
             type="submit" 
-            className="flex-1" 
+            className="flex-1 text-xs sm:text-sm"
             disabled={generateMutation.isPending || isImproving || cooldownRemaining > 0}
           >
             {generateMutation.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Idea...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating...
               </>
             ) : cooldownRemaining > 0 ? (
               `Wait ${Math.ceil(cooldownRemaining / 1000)}s`
