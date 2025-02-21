@@ -108,13 +108,13 @@ export default function StoryGeneratorForm() {
         )}
 
         {!isPremium && (
-          <div className="bg-primary/10 border-2 border-primary/20 rounded-lg p-4 mb-6">
+          <div className="bg-lavender-100 border-2 border-lavender-200 rounded-lg p-4 mb-6"> {/* Changed background and border colors */}
             <div className="flex items-center gap-3">
-              <Star className="h-5 w-5 text-primary" />
+              <Star className="h-5 w-5 text-lavender-600" /> {/* Changed star color */}
               <div>
-                <h3 className="font-semibold text-primary text-sm">Premium Features Available</h3>
+                <h3 className="font-semibold text-lavender-600 text-sm">Premium Features Available</h3> {/* Changed heading color */}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upgrade to access longer stories, detailed gameplay mechanics, and advanced world-building!
+                  Upgrade to unlock longer stories, richer gameplay mechanics, and more intricate world-building!
                 </p>
               </div>
             </div>
@@ -123,7 +123,6 @@ export default function StoryGeneratorForm() {
 
         <div className="space-y-6">
           <GenreRecommendation onGenreSelect={handleGenreSelect} />
-
 
           <FormField
             control={form.control}

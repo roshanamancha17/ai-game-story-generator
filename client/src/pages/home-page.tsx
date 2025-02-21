@@ -251,14 +251,17 @@ export default function HomePage() {
             </div>
             {!isPremium ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Star className="h-5 w-5" />
-                    <p className="text-sm font-medium">
-                      Upgrade to Premium for advanced world-building features including:
-                    </p>
+                <div className="bg-primary/10 border-2 border-primary/20 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <Star className="h-5 w-5 text-primary" />
+                    <div>
+                      <h3 className="font-semibold text-primary text-sm">Premium Features Available</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upgrade to access advanced world-building features:
+                      </p>
+                    </div>
                   </div>
-                  <ul className="mt-2 ml-7 text-sm text-muted-foreground list-disc">
+                  <ul className="mt-3 ml-8 text-sm text-muted-foreground list-disc space-y-1">
                     <li>Detailed environment descriptions and climate systems</li>
                     <li>Rich cultural backgrounds and societal structures</li>
                     <li>Comprehensive historical timelines and legends</li>
