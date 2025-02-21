@@ -249,20 +249,43 @@ export default function HomePage() {
                   : "Basic world information. Upgrade to Premium for full world-building features!"}
               </p>
             </div>
-            {!isPremium && (
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 text-primary">
-                  <Star className="h-5 w-5" />
-                  <p className="text-sm font-medium">
-                    Upgrade to Premium for advanced world-building features including detailed lore, cultures, and histories!
-                  </p>
+            {!isPremium ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Star className="h-5 w-5" />
+                    <p className="text-sm font-medium">
+                      Upgrade to Premium for advanced world-building features including:
+                    </p>
+                  </div>
+                  <ul className="mt-2 ml-7 text-sm text-muted-foreground list-disc">
+                    <li>Detailed environment descriptions and climate systems</li>
+                    <li>Rich cultural backgrounds and societal structures</li>
+                    <li>Comprehensive historical timelines and legends</li>
+                    <li>Advanced political systems and faction relationships</li>
+                  </ul>
+                </div>
+                {/* Show limited world info for free users */}
+                <div className="p-4 rounded-lg bg-white shadow-sm border">
+                  <h3 className="font-semibold mb-4">{worldDetails.worldName}</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Basic Environment</h4>
+                      <p className="mt-1 text-sm">{worldDetails.environment.geography}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Basic Overview</h4>
+                      <p className="mt-1 text-sm">{worldDetails.cosmology.origin}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <WorldBuildingDisplay
+                details={worldDetails}
+                title={generatedIdea?.gameTitle || "Game World"}
+              />
             )}
-            <WorldBuildingDisplay
-              details={worldDetails}
-              title={generatedIdea?.gameTitle || "Game World"}
-            />
           </div>
         )}
       </main>
