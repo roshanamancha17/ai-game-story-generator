@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const PREMIUM_PRICE = 9.99; // Monthly subscription price in USD
+const PREMIUM_PRICE = 1; // Monthly subscription price in INR
 
 export default function PremiumFeaturesCard() {
   const { user } = useAuth();
@@ -93,7 +93,7 @@ export default function PremiumFeaturesCard() {
           {!isPremium && (
             <div className="mt-6 space-y-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">${PREMIUM_PRICE}</div>
+                <div className="text-2xl font-bold text-primary">₹{PREMIUM_PRICE}</div>
                 <div className="text-sm text-muted-foreground">per month</div>
               </div>
               <Button 

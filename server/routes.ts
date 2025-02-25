@@ -77,12 +77,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         line_items: [
           {
             price_data: {
-              currency: "usd",
+              currency: "inr",
               product_data: {
                 name: "Premium Subscription",
                 description: "Access to premium game story generation features",
               },
-              unit_amount: 999, // $9.99 in cents
+              unit_amount: 100, // ₹1 in paise
               recurring: {
                 interval: "month"
               }
