@@ -142,14 +142,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error("Razorpay credentials are not configured");
       }
 
+      // Reinitialize Razorpay with current credentials
+      const razorpayClient = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET
+      });
+
       const options = {
         amount: 100, // ₹1 in paise
         currency: "INR",
         receipt: `order_${Date.now()}`,
       };
 
-      const order = await razorpay.orders.create(options);
-      res.json(order);
+      try {
+        const order = await razorpayClient.orders.create(options);
+        console.log("Razorpay order created successfully:", order.id);
+        res.json({
+          ...order,
+          key_id: process.env.RAZORPAY_KEY_ID // Send key_id to frontend
+        });
+      } catch (orderError) {
+        console.error("Razorpay order creation failed:", orderError);
+        throw new Error("Failed to create Razorpay order");
+      }
     } catch (error: any) {
       console.error("Razorpay order creation error:", error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

@@ -19,88 +19,88 @@ export default function PremiumFeaturesCard() {
   const [paymentGateway, setPaymentGateway] = useState("stripe");
   const queryClient = useQueryClient();
 
-  const createCheckoutMutation = useMutation({
-    mutationFn: async () => {
-      const endpoint = paymentGateway === "stripe"
-        ? "/api/create-checkout"
-        : "/api/create-razorpay-order";
-      const res = await apiRequest("POST", endpoint);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to create payment session");
-      }
-      return res.json();
-    },
-    onSuccess: (data) => {
-      if (paymentGateway === "stripe") {
-        window.location.href = data.url;
-      } else {
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: data.amount,
-          currency: "INR",
-          name: "Game Story Generator",
-          description: "Premium Subscription",
-          order_id: data.id,
-          handler: async function (response: any) {
-            try {
-              const verifyRes = await apiRequest("POST", "/api/verify-razorpay-payment", {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              });
+const createCheckoutMutation = useMutation({
+  mutationFn: async () => {
+    const endpoint = paymentGateway === "stripe"
+      ? "/api/create-checkout"
+      : "/api/create-razorpay-order";
+    const res = await apiRequest("POST", endpoint);
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || "Failed to create payment session");
+    }
+    return res.json();
+  },
+  onSuccess: (data) => {
+    if (paymentGateway === "stripe") {
+      window.location.href = data.url;
+    } else {
+      const options = {
+        key: data.key_id, // Use key from API response
+        amount: data.amount,
+        currency: "INR",
+        name: "Game Story Generator",
+        description: "Premium Subscription",
+        order_id: data.id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await apiRequest("POST", "/api/verify-razorpay-payment", {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
-              if (!verifyRes.ok) {
-                throw new Error("Payment verification failed");
-              }
-
-              toast({
-                title: "Payment successful",
-                description: "You now have access to premium features!",
-              });
-
-              queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-            } catch (error: any) {
-              console.error("Razorpay payment verification error:", error);
-              toast({
-                title: "Payment verification failed",
-                description: error instanceof Error ? error.message : "Payment verification failed",
-                variant: "destructive",
-              });
+            if (!verifyRes.ok) {
+              throw new Error("Payment verification failed");
             }
-          },
-          prefill: {
-            name: user?.username,
-          },
-          theme: {
-            color: "#0066FF",
-          },
-        };
 
-        try {
-          if (typeof window.Razorpay === "undefined") {
-            throw new Error("Razorpay SDK not loaded");
+            toast({
+              title: "Payment successful",
+              description: "You now have access to premium features!",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          } catch (error: any) {
+            console.error("Razorpay payment verification error:", error);
+            toast({
+              title: "Payment verification failed",
+              description: error instanceof Error ? error.message : "Payment verification failed",
+              variant: "destructive",
+            });
           }
-          const rzp = new window.Razorpay(options);
-          rzp.open();
-        } catch (error) {
-          console.error("Razorpay initialization error:", error);
-          toast({
-            title: "Payment initialization failed",
-            description: "Unable to initialize payment gateway. Please try again later.",
-            variant: "destructive",
-          });
+        },
+        prefill: {
+          name: user?.username,
+        },
+        theme: {
+          color: "#0066FF",
+        },
+      };
+
+      try {
+        if (typeof window.Razorpay === "undefined") {
+          throw new Error("Razorpay SDK not loaded");
         }
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } catch (error) {
+        console.error("Razorpay initialization error:", error);
+        toast({
+          title: "Payment initialization failed",
+          description: "Unable to initialize payment gateway. Please try again later.",
+          variant: "destructive",
+        });
       }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error creating payment session",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    }
+  },
+  onError: (error: Error) => {
+    toast({
+      title: "Error creating payment session",
+      description: error.message,
+      variant: "destructive",
+    });
+  },
+});
 
   const features = [
     {
