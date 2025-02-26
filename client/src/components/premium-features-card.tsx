@@ -35,67 +35,76 @@ const createCheckoutMutation = useMutation({
     if (paymentGateway === "stripe") {
       window.location.href = data.url;
     } else {
-      console.log("Initializing Razorpay with order:", data); // Debug log
-      const options = {
-        key: data.key_id, // Use key from API response
-        amount: data.amount,
-        currency: "INR",
-        name: "Game Story Generator",
-        description: "Premium Subscription",
-        order_id: data.id,
-        handler: async function (response: any) {
-          try {
-            const verifyRes = await apiRequest("POST", "/api/verify-razorpay-payment", {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-            });
+      // Wait for Razorpay SDK to load
+      const initRazorpay = () => {
+        if (typeof window.Razorpay === "undefined") {
+          console.log("Waiting for Razorpay SDK to load...");
+          setTimeout(initRazorpay, 500);
+          return;
+        }
 
-            if (!verifyRes.ok) {
-              throw new Error("Payment verification failed");
-            }
+        console.log("Initializing Razorpay payment with order:", data);
+        try {
+          const options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: "INR",
+            name: "Game Story Generator",
+            description: "Premium Subscription",
+            order_id: data.id,
+            handler: async function (response: any) {
+              try {
+                const verifyRes = await apiRequest("POST", "/api/verify-razorpay-payment", {
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature,
+                });
 
-            toast({
-              title: "Payment successful",
-              description: "You now have access to premium features!",
-            });
+                if (!verifyRes.ok) {
+                  throw new Error("Payment verification failed");
+                }
 
-            queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-          } catch (error: any) {
-            console.error("Razorpay payment verification error:", error);
-            toast({
-              title: "Payment verification failed",
-              description: error instanceof Error ? error.message : "Payment verification failed",
-              variant: "destructive",
-            });
-          }
-        },
-        prefill: {
-          name: user?.username,
-        },
-        theme: {
-          color: "#0066FF",
-        },
+                toast({
+                  title: "Payment successful",
+                  description: "You now have access to premium features!",
+                });
+
+                queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+              } catch (error: any) {
+                console.error("Razorpay payment verification error:", error);
+                toast({
+                  title: "Payment verification failed",
+                  description: error instanceof Error ? error.message : "Payment verification failed",
+                  variant: "destructive",
+                });
+              }
+            },
+            prefill: {
+              name: user?.username,
+            },
+            theme: {
+              color: "#0066FF",
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        } catch (error: any) {
+          console.error("Razorpay initialization error:", error);
+          toast({
+            title: "Payment initialization failed",
+            description: error.message || "Unable to initialize payment gateway",
+            variant: "destructive",
+          });
+        }
       };
 
-      try {
-        if (typeof window.Razorpay === "undefined") {
-          throw new Error("Razorpay SDK not loaded");
-        }
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } catch (error) {
-        console.error("Razorpay initialization error:", error);
-        toast({
-          title: "Payment initialization failed",
-          description: "Unable to initialize payment gateway. Please try again later.",
-          variant: "destructive",
-        });
-      }
+      // Start the Razorpay initialization
+      initRazorpay();
     }
   },
   onError: (error: Error) => {
-    console.error("Payment session creation error:", error); // Debug log
+    console.error("Payment session creation error:", error);
     toast({
       title: "Error creating payment session",
       description: error.message,

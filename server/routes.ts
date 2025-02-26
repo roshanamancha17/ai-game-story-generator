@@ -13,10 +13,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16"
 });
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "dummy_key",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "dummy_secret"
-});
+const razorpay = !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET 
+  ? null
+  : new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
 
 const generateIdeaSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
@@ -130,23 +132,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update the create-razorpay-order endpoint with better error handling
+  // Update the create-razorpay-order endpoint
   app.post("/api/create-razorpay-order", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }
 
     try {
-      // Verify Razorpay credentials are present
-      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        throw new Error("Razorpay credentials are not configured");
+      // Check if Razorpay is properly initialized
+      if (!razorpay) {
+        console.error("Razorpay initialization failed: Missing credentials");
+        throw new Error("Payment system is not properly configured");
       }
-
-      // Reinitialize Razorpay with current credentials
-      const razorpayClient = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET
-      });
 
       const options = {
         amount: 100, // ₹1 in paise
@@ -155,21 +152,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       try {
-        const order = await razorpayClient.orders.create(options);
+        const order = await razorpay.orders.create(options);
         console.log("Razorpay order created successfully:", order.id);
+
+        // Send both order details and key_id
         res.json({
           ...order,
-          key_id: process.env.RAZORPAY_KEY_ID // Send key_id to frontend
+          key_id: process.env.RAZORPAY_KEY_ID
         });
-      } catch (orderError) {
+      } catch (orderError: any) {
         console.error("Razorpay order creation failed:", orderError);
-        throw new Error("Failed to create Razorpay order");
+        throw new Error(orderError.message || "Failed to create payment order");
       }
     } catch (error: any) {
-      console.error("Razorpay order creation error:", error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      console.error("Razorpay API error:", error);
       res.status(500).json({ 
-        error: errorMessage,
+        error: error.message || "Payment system error",
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
