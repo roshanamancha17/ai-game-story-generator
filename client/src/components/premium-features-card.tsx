@@ -3,9 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Check, Star, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { FREE_TIER_LIMITS, PREMIUM_TIER_LIMITS } from "@shared/schema";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 const PREMIUM_PRICE = 1; // Monthly subscription price in INR
 
@@ -13,19 +16,68 @@ export default function PremiumFeaturesCard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isPremium = user?.isPremium;
+  const [paymentGateway, setPaymentGateway] = useState("stripe");
+  const queryClient = useQueryClient();
 
   const createCheckoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/create-checkout");
+      const endpoint = paymentGateway === "stripe"
+        ? "/api/create-checkout"
+        : "/api/create-razorpay-order";
+      const res = await apiRequest("POST", endpoint);
       return res.json();
     },
     onSuccess: (data) => {
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
+      if (paymentGateway === "stripe") {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        // Handle Razorpay
+        const options = {
+          key: process.env.RAZORPAY_KEY_ID,
+          amount: data.amount,
+          currency: "INR",
+          name: "Game Story Generator",
+          description: "Premium Subscription",
+          order_id: data.id,
+          handler: async function (response: any) {
+            try {
+              await apiRequest("POST", "/api/verify-razorpay-payment", {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+
+              toast({
+                title: "Payment successful",
+                description: "You now have access to premium features!",
+              });
+
+              // Refresh user data to update premium status
+              queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+            } catch (error) {
+              toast({
+                title: "Payment verification failed",
+                description: error.message,
+                variant: "destructive",
+              });
+            }
+          },
+          prefill: {
+            email: user?.email,
+            name: user?.username,
+          },
+          theme: {
+            color: "#0066FF",
+          },
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      }
     },
     onError: (error: Error) => {
       toast({
-        title: "Error creating checkout session",
+        title: "Error creating payment session",
         description: error.message,
         variant: "destructive",
       });
@@ -96,8 +148,24 @@ export default function PremiumFeaturesCard() {
                 <div className="text-2xl font-bold text-primary">₹{PREMIUM_PRICE}</div>
                 <div className="text-sm text-muted-foreground">per month</div>
               </div>
-              <Button 
-                className="w-full" 
+
+              <RadioGroup
+                defaultValue="stripe"
+                onValueChange={setPaymentGateway}
+                className="grid grid-cols-2 gap-4 my-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="stripe" id="stripe" />
+                  <Label htmlFor="stripe">Stripe</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="razorpay" id="razorpay" />
+                  <Label htmlFor="razorpay">Razorpay</Label>
+                </div>
+              </RadioGroup>
+
+              <Button
+                className="w-full"
                 onClick={() => createCheckoutMutation.mutate()}
                 disabled={createCheckoutMutation.isPending}
               >

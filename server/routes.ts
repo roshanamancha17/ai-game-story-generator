@@ -1,14 +1,21 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { storage } from "./storage";
 import { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails, generateWorldBuilding } from "./utils/openai";
 import { z } from "zod";
 import Stripe from "stripe";
-import * as openai from 'openai'; //Import openai
+import * as openai from 'openai';
+import Razorpay from "razorpay";
+import crypto from "crypto";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16"
+});
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || "dummy_key",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "dummy_secret"
 });
 
 const generateIdeaSchema = z.object({
@@ -23,10 +30,32 @@ const genreRecommendationSchema = z.object({
   description: z.string().min(1, "Description is required").max(1000, "Description too long")
 });
 
-const storyGenreSchema = z.string().min(1, "Genre is required").max(50, "Genre too long"); //Added StoryGenreSchema
+const storyGenreSchema = z.string().min(1, "Genre is required").max(50, "Genre too long");
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Create demo user if it doesn't exist
+  app.post("/api/create-demo-user", async (req, res) => {
+    try {
+      // Check if demo user already exists
+      const existingUser = await storage.getUserByUsername("demo");
+      if (existingUser) {
+        return res.status(200).json({ message: "Demo user already exists" });
+      }
+
+      // Create demo user
+      const user = await storage.createUser({
+        username: "demo",
+        password: await hashPassword("demo123"),
+      });
+
+      res.status(201).json({ message: "Demo user created successfully" });
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
 
   app.post("/api/recommend-genre", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -36,7 +65,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { description } = genreRecommendationSchema.parse(req.body);
 
-      // Call OpenAI to analyze the story and recommend a genre
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -54,7 +82,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const recommendation = JSON.parse(completion.choices[0].message.content);
 
-      // Validate the recommended genre against our schema
       if (!storyGenreSchema.safeParse(recommendation.recommendedGenre).success) {
         throw new Error("Invalid genre recommendation received");
       }
@@ -103,6 +130,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/create-razorpay-order", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const options = {
+        amount: 100, // ₹1 in paise
+        currency: "INR",
+        receipt: `order_${Date.now()}`,
+      };
+
+      const order = await razorpay.orders.create(options);
+      res.json(order);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  app.post("/api/verify-razorpay-payment", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature
+      } = req.body;
+
+      const sign = razorpay_order_id + "|" + razorpay_payment_id;
+      const expectedSign = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+        .update(sign)
+        .digest("hex");
+
+      if (razorpay_signature === expectedSign) {
+        await storage.updateUserPremium(req.user.id, true);
+        res.json({ verified: true });
+      } else {
+        res.status(400).json({ error: "Invalid signature" });
+      }
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
   app.post("/api/webhook", async (req, res) => {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -119,8 +196,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const userId = parseInt(session.client_reference_id!);
-
-      // Update user's premium status
       await storage.updateUserPremium(userId, true);
     }
 
@@ -152,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { description } = improvePromptSchema.parse(req.body);
 
       const improved = await generateImprovedPrompt(
-        { description }, 
+        { description },
         req.user.id.toString(),
         req.user.isPremium
       );
@@ -213,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const gameplayDetails = await generateGameplayDetails(
-        req.body, 
+        req.body,
         req.user.id.toString(),
         req.user.isPremium
       );
@@ -236,7 +311,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.isPremium
       );
 
-      // If not premium, return limited world details
       if (!req.user.isPremium) {
         const limitedDetails = {
           worldName: worldDetails.worldName,
@@ -277,7 +351,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add this new endpoint near the other premium-related endpoints
   app.post("/api/enable-premium", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
@@ -285,8 +358,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       await storage.updateUserPremium(req.user.id, true);
-
-      // Get updated user data
       const user = await storage.getUser(req.user.id);
       res.json(user);
     } catch (error: any) {
