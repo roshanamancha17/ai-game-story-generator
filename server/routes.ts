@@ -5,7 +5,6 @@ import { storage } from "./storage";
 import { generateGameStory, generateGameIdea, generateImprovedPrompt, generateGameplayDetails, generateWorldBuilding } from "./utils/openai";
 import { z } from "zod";
 import Stripe from "stripe";
-import * as openai from 'openai';
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
@@ -13,12 +12,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16"
 });
 
-const razorpay = !process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET 
-  ? null
-  : new Razorpay({
+// Initialize Razorpay only if credentials exist
+const initializeRazorpay = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    console.error("Razorpay credentials missing");
+    return null;
+  }
+  try {
+    return new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET
     });
+  } catch (error) {
+    console.error("Failed to initialize Razorpay:", error);
+    return null;
+  }
+};
+
+const razorpay = initializeRazorpay();
 
 const generateIdeaSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")

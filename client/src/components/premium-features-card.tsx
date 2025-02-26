@@ -35,15 +35,26 @@ const createCheckoutMutation = useMutation({
     if (paymentGateway === "stripe") {
       window.location.href = data.url;
     } else {
-      // Wait for Razorpay SDK to load
+      // Wait for Razorpay SDK to load with timeout
+      let attempts = 0;
+      const maxAttempts = 10;
+
       const initRazorpay = () => {
         if (typeof window.Razorpay === "undefined") {
-          console.log("Waiting for Razorpay SDK to load...");
-          setTimeout(initRazorpay, 500);
+          if (attempts >= maxAttempts) {
+            toast({
+              title: "Payment initialization failed",
+              description: "Failed to load payment gateway. Please try again later.",
+              variant: "destructive",
+            });
+            return;
+          }
+          attempts++;
+          console.log(`Waiting for Razorpay SDK to load... Attempt ${attempts}`);
+          setTimeout(initRazorpay, 1000);
           return;
         }
 
-        console.log("Initializing Razorpay payment with order:", data);
         try {
           const options = {
             key: data.key_id,
@@ -61,7 +72,8 @@ const createCheckoutMutation = useMutation({
                 });
 
                 if (!verifyRes.ok) {
-                  throw new Error("Payment verification failed");
+                  const error = await verifyRes.json();
+                  throw new Error(error.error || "Payment verification failed");
                 }
 
                 toast({
@@ -74,7 +86,7 @@ const createCheckoutMutation = useMutation({
                 console.error("Razorpay payment verification error:", error);
                 toast({
                   title: "Payment verification failed",
-                  description: error instanceof Error ? error.message : "Payment verification failed",
+                  description: error.message || "Payment verification failed",
                   variant: "destructive",
                 });
               }
@@ -99,7 +111,6 @@ const createCheckoutMutation = useMutation({
         }
       };
 
-      // Start the Razorpay initialization
       initRazorpay();
     }
   },
