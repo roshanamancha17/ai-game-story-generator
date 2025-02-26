@@ -35,6 +35,7 @@ const createCheckoutMutation = useMutation({
     if (paymentGateway === "stripe") {
       window.location.href = data.url;
     } else {
+      console.log("Initializing Razorpay with order:", data); // Debug log
       const options = {
         key: data.key_id, // Use key from API response
         amount: data.amount,
@@ -94,6 +95,7 @@ const createCheckoutMutation = useMutation({
     }
   },
   onError: (error: Error) => {
+    console.error("Payment session creation error:", error); // Debug log
     toast({
       title: "Error creating payment session",
       description: error.message,
