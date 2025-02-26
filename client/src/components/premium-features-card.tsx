@@ -55,24 +55,34 @@ export default function PremiumFeaturesCard() {
 
               // Refresh user data to update premium status
               queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-            } catch (error) {
+            } catch (error: any) {
+              console.error("Razorpay payment verification error:", error);
               toast({
                 title: "Payment verification failed",
-                description: error.message,
+                description: error instanceof Error ? error.message : "Payment verification failed",
                 variant: "destructive",
               });
             }
           },
           prefill: {
-            email: user?.email,
             name: user?.username,
           },
           theme: {
             color: "#0066FF",
           },
         };
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
+
+        try {
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        } catch (error) {
+          console.error("Razorpay initialization error:", error);
+          toast({
+            title: "Payment initialization failed",
+            description: "Unable to initialize payment gateway. Please try again later.",
+            variant: "destructive",
+          });
+        }
       }
     },
     onError: (error: Error) => {

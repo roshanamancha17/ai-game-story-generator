@@ -130,12 +130,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update the create-razorpay-order endpoint with better error handling
   app.post("/api/create-razorpay-order", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }
 
     try {
+      // Verify Razorpay credentials are present
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        throw new Error("Razorpay credentials are not configured");
+      }
+
       const options = {
         amount: 100, // ₹1 in paise
         currency: "INR",
@@ -145,8 +151,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await razorpay.orders.create(options);
       res.json(order);
     } catch (error: any) {
+      console.error("Razorpay order creation error:", error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      res.status(500).json({ error: errorMessage });
+      res.status(500).json({ 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 
