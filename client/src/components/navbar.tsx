@@ -8,7 +8,8 @@ import {
   Loader2, 
   UserCircle,
   Bookmark,
-  Settings
+  Settings,
+  Scroll
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,30 +23,35 @@ import {
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
 
+  const Logo = () => (
+    <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <GamepadIcon className="h-6 w-6 text-primary" />
+      <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden sm:block">
+        Game Story Generator
+      </h1>
+      <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent sm:hidden">
+        GSG
+      </h1>
+    </Link>
+  );
+
   return (
     <header className="bg-white border-b sticky top-0 z-10">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          {/* Logo and Brand */}
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <GamepadIcon className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent hidden sm:block">
-              Game Story Generator
-            </h1>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent sm:hidden">
-              GSG
-            </h1>
-          </Link>
+          <Logo />
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-6">
             <Link href="/stories">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                <Scroll className="h-4 w-4 mr-2" />
                 My Stories
               </Button>
             </Link>
             <Link href="/plans">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                <GamepadIcon className="h-4 w-4 mr-2" />
                 Game Plans
               </Button>
             </Link>
@@ -68,37 +74,37 @@ export default function Navbar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              
+
               <DropdownMenuItem asChild className="md:hidden">
                 <Link href="/stories" className="cursor-pointer">
-                  <Bookmark className="h-4 w-4 mr-2" />
+                  <Scroll className="h-4 w-4 mr-2" />
                   My Stories
                 </Link>
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem asChild className="md:hidden">
                 <Link href="/plans" className="cursor-pointer">
                   <GamepadIcon className="h-4 w-4 mr-2" />
                   Game Plans
                 </Link>
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem asChild className="md:hidden">
                 <Link href="/premium" className="cursor-pointer">
                   <Crown className="h-4 w-4 mr-2" />
                   Premium Features
                 </Link>
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem asChild>
                 <Link href="/settings" className="cursor-pointer">
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Link>
               </DropdownMenuItem>
-              
+
               <DropdownMenuSeparator />
-              
+
               <DropdownMenuItem 
                 onClick={() => logoutMutation.mutate()}
                 disabled={logoutMutation.isPending}

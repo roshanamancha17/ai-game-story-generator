@@ -12,7 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16"
 });
 
-// Initialize Razorpay only if credentials exist
+// Update the Razorpay initialization section
 const initializeRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     console.error("Razorpay credentials missing");
