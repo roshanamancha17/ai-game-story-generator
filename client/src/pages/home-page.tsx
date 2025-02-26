@@ -15,7 +15,6 @@ import GameplayDetailsDisplay from "@/components/gameplay-details";
 import WorldBuildingDisplay from "@/components/world-building-display";
 import { Link } from "wouter";
 import { queryClient } from "@/lib/queryClient";
-import Navbar from "@/components/navbar";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
@@ -103,7 +102,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      <Navbar />
       <main className="container mx-auto px-4 py-4 sm:py-8">
         <Tabs defaultValue="story" className="space-y-6 sm:space-y-8">
           <TabsList className="grid w-full sm:w-[400px] grid-cols-2 mx-auto bg-white shadow-sm">
