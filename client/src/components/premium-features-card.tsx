@@ -25,14 +25,16 @@ export default function PremiumFeaturesCard() {
         ? "/api/create-checkout"
         : "/api/create-razorpay-order";
       const res = await apiRequest("POST", endpoint);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create payment session");
+      }
       return res.json();
     },
     onSuccess: (data) => {
       if (paymentGateway === "stripe") {
-        // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else {
-        // Handle Razorpay
         const options = {
           key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: data.amount,
@@ -42,18 +44,21 @@ export default function PremiumFeaturesCard() {
           order_id: data.id,
           handler: async function (response: any) {
             try {
-              await apiRequest("POST", "/api/verify-razorpay-payment", {
+              const verifyRes = await apiRequest("POST", "/api/verify-razorpay-payment", {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
               });
+
+              if (!verifyRes.ok) {
+                throw new Error("Payment verification failed");
+              }
 
               toast({
                 title: "Payment successful",
                 description: "You now have access to premium features!",
               });
 
-              // Refresh user data to update premium status
               queryClient.invalidateQueries({ queryKey: ["/api/user"] });
             } catch (error: any) {
               console.error("Razorpay payment verification error:", error);
@@ -73,7 +78,10 @@ export default function PremiumFeaturesCard() {
         };
 
         try {
-          const rzp = new (window as any).Razorpay(options);
+          if (typeof window.Razorpay === "undefined") {
+            throw new Error("Razorpay SDK not loaded");
+          }
+          const rzp = new window.Razorpay(options);
           rzp.open();
         } catch (error) {
           console.error("Razorpay initialization error:", error);
