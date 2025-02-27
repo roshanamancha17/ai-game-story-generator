@@ -11,7 +11,7 @@ import { Redirect } from "wouter";
 import { Loader2, GamepadIcon, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -19,6 +19,7 @@ export default function AuthPage() {
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
+  const { toast } = useToast();
 
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema),
@@ -161,7 +162,7 @@ export default function AuthPage() {
           </p>
         </div>
       </div>
-      
+
       {/* Forgot Password Dialog */}
       <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
         <DialogContent>
