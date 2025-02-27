@@ -8,10 +8,17 @@ import { useForm } from "react-hook-form";
 import { insertUserSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Redirect } from "wouter";
-import { Loader2, GamepadIcon } from "lucide-react";
+import { Loader2, GamepadIcon, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [email, setEmail] = useState("");
 
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema),
@@ -28,6 +35,17 @@ export default function AuthPage() {
       password: ""
     }
   });
+
+  const handleForgotPassword = () => {
+    // Here you would integrate with your backend to handle password reset
+    // For now, we'll just show a toast message
+    toast({
+      title: "Password reset initiated",
+      description: `A reset link has been sent to ${email}`,
+    });
+    setShowForgotPassword(false);
+    setEmail("");
+  };
 
   if (user) {
     return <Redirect to="/" />;
@@ -53,12 +71,40 @@ export default function AuthPage() {
                     </div>
                     <div>
                       <Label htmlFor="login-password">Password</Label>
-                      <Input id="login-password" type="password" {...loginForm.register("password")} />
+                      <div className="relative">
+                        <Input 
+                          id="login-password" 
+                          type={showLoginPassword ? "text" : "password"} 
+                          {...loginForm.register("password")} 
+                        />
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute right-0 top-0 h-full px-3" 
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
                       {loginMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       Login
                     </Button>
+                    <div className="text-sm text-center">
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                   </div>
                 </form>
               </TabsContent>
@@ -72,7 +118,26 @@ export default function AuthPage() {
                     </div>
                     <div>
                       <Label htmlFor="register-password">Password</Label>
-                      <Input id="register-password" type="password" {...registerForm.register("password")} />
+                      <div className="relative">
+                        <Input 
+                          id="register-password" 
+                          type={showRegisterPassword ? "text" : "password"} 
+                          {...registerForm.register("password")} 
+                        />
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="sm" 
+                          className="absolute right-0 top-0 h-full px-3" 
+                          onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                        >
+                          {showRegisterPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
                       {registerMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -96,6 +161,38 @@ export default function AuthPage() {
           </p>
         </div>
       </div>
+      
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="Enter your email address" 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShowForgotPassword(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleForgotPassword}>
+              Send Reset Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
