@@ -63,62 +63,64 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <UserCircle className="h-5 w-5" />
-                <span className="hidden sm:inline">{user?.username}</span>
+          <div className="flex items-center gap-2">
+            {/* Mobile Premium Button - Outside Dropdown */}
+            <Link href="/premium" className="md:hidden">
+              <Button variant="ghost" size="sm" className="text-primary">
+                <Crown className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+            </Link>
 
-              <DropdownMenuItem asChild className="md:hidden">
-                <Link href="/stories" className="cursor-pointer">
-                  <Scroll className="h-4 w-4 mr-2" />
-                  My Stories
-                </Link>
-              </DropdownMenuItem>
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <UserCircle className="h-5 w-5" />
+                  <span className="hidden sm:inline">{user?.username}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
 
-              <DropdownMenuItem asChild className="md:hidden">
-                <Link href="/plans" className="cursor-pointer">
-                  <GamepadIcon className="h-4 w-4 mr-2" />
-                  Game Plans
-                </Link>
-              </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <Link href="/stories" className="cursor-pointer">
+                    <Scroll className="h-4 w-4 mr-2" />
+                    My Stories
+                  </Link>
+                </DropdownMenuItem>
 
-              <DropdownMenuItem asChild className="md:hidden">
-                <Link href="/premium" className="cursor-pointer">
-                  <Crown className="h-4 w-4 mr-2" />
-                  Premium Features
-                </Link>
-              </DropdownMenuItem>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <Link href="/plans" className="cursor-pointer">
+                    <GamepadIcon className="h-4 w-4 mr-2" />
+                    Game Plans
+                  </Link>
+                </DropdownMenuItem>
 
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="cursor-pointer">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
 
-              <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
 
-              <DropdownMenuItem 
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
-                className="text-red-600 cursor-pointer"
-              >
-                {logoutMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <LogOut className="h-4 w-4 mr-2" />
-                )}
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem 
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                  className="text-red-600 cursor-pointer"
+                >
+                  {logoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4 mr-2" />
+                  )}
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </nav>
     </header>

@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import HomePage from "@/pages/home-page";
 import PremiumPage from "@/pages/premium-page";
+import SettingsPage from "@/pages/settings-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import Navbar from "@/components/navbar";
 
@@ -21,6 +22,7 @@ function Router() {
           <ProtectedRoute path="/premium" component={PremiumPage} />
           <ProtectedRoute path="/stories" component={HomePage} />
           <ProtectedRoute path="/plans" component={HomePage} />
+          <ProtectedRoute path="/settings" component={SettingsPage} />
           <Route component={NotFound} />
         </Switch>
       </div>
