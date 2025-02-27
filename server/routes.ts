@@ -45,6 +45,10 @@ const genreRecommendationSchema = z.object({
 
 const storyGenreSchema = z.string().min(1, "Genre is required").max(50, "Genre too long");
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email format")
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
@@ -399,6 +403,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: errorMessage });
     }
   });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+
+      // Check if user exists but don't reveal this information
+      const user = await storage.getUserByEmail(email);
+
+      if (user) {
+        // In a production environment, you would:
+        // 1. Generate a secure reset token
+        // 2. Save it to the database with an expiration
+        // 3. Send an email with a reset link
+        console.log(`Password reset requested for user: ${user.username}`);
+      }
+
+      // Always return success to prevent user enumeration
+      res.json({ 
+        message: "If an account exists with this email, you will receive password reset instructions." 
+      });
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

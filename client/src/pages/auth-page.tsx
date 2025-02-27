@@ -12,6 +12,7 @@ import { Loader2, GamepadIcon, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -22,7 +23,7 @@ export default function AuthPage() {
   const { toast } = useToast();
 
   const loginForm = useForm({
-    resolver: zodResolver(insertUserSchema),
+    resolver: zodResolver(insertUserSchema.pick({ username: true, password: true })),
     defaultValues: {
       username: "",
       password: ""
@@ -33,19 +34,33 @@ export default function AuthPage() {
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: ""
     }
   });
 
-  const handleForgotPassword = () => {
-    // Here you would integrate with your backend to handle password reset
-    // For now, we'll just show a toast message
-    toast({
-      title: "Password reset initiated",
-      description: `A reset link has been sent to ${email}`,
-    });
-    setShowForgotPassword(false);
-    setEmail("");
+  const handleForgotPassword = async () => {
+    try {
+      const res = await apiRequest("POST", "/api/forgot-password", { email });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to process request");
+      }
+
+      toast({
+        title: "Password reset initiated",
+        description: `If an account exists with ${email}, you will receive a reset link shortly.`,
+      });
+      setShowForgotPassword(false);
+      setEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   if (user) {
@@ -116,6 +131,14 @@ export default function AuthPage() {
                     <div>
                       <Label htmlFor="register-username">Username</Label>
                       <Input id="register-username" {...registerForm.register("username")} />
+                    </div>
+                    <div>
+                      <Label htmlFor="register-email">Email</Label>
+                      <Input 
+                        id="register-email" 
+                        type="email" 
+                        {...registerForm.register("email")} 
+                      />
                     </div>
                     <div>
                       <Label htmlFor="register-password">Password</Label>

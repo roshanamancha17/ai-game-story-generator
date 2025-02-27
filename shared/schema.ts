@@ -5,10 +5,24 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   isPremium: boolean("is_premium").notNull().default(false),
   premiumUntil: timestamp("premium_until"),
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry")
 });
+
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    email: true,
+    password: true,
+  })
+  .extend({
+    email: z.string().email("Invalid email format"),
+    password: z.string().min(6, "Password must be at least 6 characters")
+  });
 
 export const stories = pgTable("stories", {
   id: serial("id").primaryKey(),
@@ -31,11 +45,6 @@ export const gamePlans = pgTable("game_plans", {
   gameplayDetails: jsonb("gameplay_details"),
   worldBuildingDetails: jsonb("world_building_details"),
   createdAt: timestamp("created_at").defaultNow().notNull()
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
 });
 
 export const insertStorySchema = createInsertSchema(stories).pick({
